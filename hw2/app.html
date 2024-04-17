@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>String Storage DApp</title>
+    <link rel="stylesheet" type="text/css" href="styles/app.css">
+    <script src="https://unpkg.com/@metamask/detect-provider/dist/detect-provider.min.js"></script>
+    <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    <script src="js/abi.js"></script>
+    <script src="js/app.js"></script>
+</head>
+<body>
+    <div class="container">
+        <div class="contract-info">
+            <h2>Contract Location</h2>
+	    <p>This DApp is connected to a smart contract on the Ethereum testnet: <a href="https://sepolia.etherscan.io/address/0x1e33DaE11dcd6197259673C286C1F56e75A46A18"> 0x1e33DaE11dcd6197259673C286C1F56e75A46A18 </a> </p>
+            <h3>Contract Description</h3>
+            <p>This page allows the storage and retrieval of a string. Users can submit a string to the contract, which is then stored on the blockchain. Anyone can read the latest string submitted.</p>
+        </div>
+ 
+        <input type="text" id="inputString" placeholder="Enter a string...">
+	<div id="loadingIndicator" style="display: none;">
+  	    <img src="styles/loading.gif" alt="Loading..." width="64" height="64" > 
+	</div>
+        <button id="submitStringButton">Submit String</button>
+        <div id="txHashDisplay"></div>
+	<p> Below is a live feed. Whenver anyone submits a new string it will show up here. We use events to acheive this! </p> 
+	<div id="liveStringDisplay" class="live-update"></div>
+        <button id="fetchLatestStringButton">Fetch Latest String</button>
+        <div id="latestStringDisplay"></div>
+
+   </div>
+</body>
+</html>
+
