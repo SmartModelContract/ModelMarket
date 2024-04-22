@@ -3,17 +3,36 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Smart Contract Interaction</title>
+    <title>Model DApp</title>
     <link rel="stylesheet" href="app.css">
     <script src="https://cdn.ethers.io/lib/ethers-5.2.umd.min.js" type="application/javascript"></script>
+    <script src="https://cdn.jsdelivr.net/npm/ipfs-http-client/dist/index.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.0/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/crypto-js/crypto-js.js"></script>
 </head>
 <body>
-    <h1>Smart Contract Interaction</h1>
+    <h1>Model DApp</h1>
     <button id="connectWallet">Connect to MetaMask</button>
     <div>
+        <input type="text" id="modelIdInput" placeholder="Model ID">
         <input type="file" id="fileInput">
-        <button id="uploadButton">Upload File</button>
+        <input type="number" id="rewardInput" placeholder="Reward" step="0.01">
+        <input type="text" id="contextInput" placeholder="Context (string)">
+        <button id="submitButton">Submit Model Request</button>
     </div>
+
+    <h3>Models Requested:</h3>
+
+    <ul id="modelList"></ul>
+
+    <div>
+        <input type="text" id="verifyModelIdInput" placeholder="Model ID for Verification">
+        <input type="file" id="modelWeightsInput" placeholder="Model Weights">
+        <button id="verifyButton">Submit Model</button>
+    </div>
+
+    <h3>Models Needing Verification:</h3>
+    <ul id="modelsToVerifyList"></ul>
 
     <script src="app.js"></script>
 </body>

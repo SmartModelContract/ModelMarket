@@ -23,3 +23,7 @@ button:hover {
 input[type="file"] {
     margin-top: 10px;
 }
+
+#modelList li {
+    margin-bottom: 30px; /* Adjust the value as needed */
+}

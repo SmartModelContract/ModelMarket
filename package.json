@@ -1,6 +1,16 @@
 {
   "dependencies": {
+    "@helia/unixfs": "^3.0.4",
+    "@thirdweb-dev/storage": "^2.0.14",
+    "api": "^6.1.1",
+    "cors": "^2.8.5",
+    "csv-split-stream": "^1.0.2",
+    "dotenv": "^16.4.5",
     "ethers": "5.7.2",
+    "express": "^4.19.2",
+    "helia": "^4.1.1",
+    "ipfs": "^0.66.1",
+    "multer": "^1.4.5-lts.1",
     "solc": "^0.8.25"
   },
   "scripts": {
