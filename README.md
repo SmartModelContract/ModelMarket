@@ -1,1 +1,23 @@
 # SmartModel
+
+SmartModel (name subject to change) is a Decentralized Application (dApp) designed to reward "trainers" with computational resources for fulfilling the requests of clients without an intermediary facilitator. 
+
+In this README, the term "superhash" will refer to the SHA256 digest of the hash receipt returned by Interplanetary Filesystem ([IPFS](https://www.ipfs.com/)) upon uploading some data. Additionally, all users will be required to provide some stake of ModelCoin, a bespoke cryptocurrency designed to incentivize the ecosystem to behave properly. If deadlines or other key protocols are broken, these stakes will be slashed (claimed by the contract).
+
+In broad strokes, SmartModel functions like this:
+
+1) The requestor uploads their request (including the whole dataset, deadlines, description) to the Ethereum blockchain. Locally, the dApp randomly splits the dataset into testing and training data, **strips the testing data of labels**, then uploads the testing and **unlabeled** training data to IPFS. The resultant hash is openly revealed on-chain, rendering it available for public download, while only the superhash of the _labeled_ testing data (the ground truth) is uploaded (to lock it in, without yet allowing anyone to view it).
+
+2) A time lock function is then activated, beginning a period of time within which any user can become a model "trainer" by fitting the released training data with an ML model. After the model has been trained, the trainer uploads the superhash of both their trained ML model and its prediction (an array containing the results of the model when applied to the unlabeled testing data).
+
+3) After submissions have closed, there is a short period for the requestor to upload the **ground truth** on-chain (on penalty of stake slashing). Once it is uploaded, trainers can easily compute the accuracy of their model by comparing their prediction to the ground truth. A secondary, shorter waiting period is provided for trainers to upload the accuracy of their model on-chain (so far, based on the honor system). 
+
+4) The core enforcement functionality of the protocol then ensues. The contract automatically selects and notifies the trainer with the highest claimed accuracy (chosen pseudorandomly in the case of a tie). Within a specific amount of time, this trainer must back up their claim by creating and submitting a zk-SNARK which evaluates to 1 (true) iff two inputs—the ground truth and their prediction—result in an accuracy identical to the one they claimed previously. After the trainer compiles their zk-SNARK using Circom and pushes it to the chain (alongside the IPFS receipt of the models prediction), the contract will first check that the IPFS receipt does correspond to the superhash previously uploaded. The prediction is then retrieved from IPFS and inputted into the zk-SNARK alongside the ground truth. If the output is 0 (false), **the trainer's stake is slashed**, and the contract selects and notifies the trainer with the next-highest claimed accuracy. This process repeats until someone uploads a valid SNARK, or the list of model trainers is exhausted (upon which point the requestor would be refunded).
+
+5) Upon the upload and verification of a valid SNARK, that trainer must then push the IPFS receipt of their model to the chain within a certain timeframe. The contract checks that its hash is equal to the corresponding superhash previously uploaded. If so, the trainer recieves their reward, and the requester now has access to the model via the IPFS hash (otherwise, their stake is slashed). The request is complete, and the model is now publicly available (though the use case is likely somewhat specific to the requester).
+
+While there are no techical checks to ensure that the superhash originally uploaded to the chain refers to the correct model, there is an economic incentive for trainers to upload the model which actually generated their prediction, since uploading the wrong data would detract from the reputation of the system, thereby causing the price of ModelCoin to drop. By providing a stake of ModelCoin, trainers are guaranteed to have some interest in maintaining the value of ModelCoin. Furthermore, since it is infeasible to generate an accurate prediction on the testing data without producing an appropriate ML model, uploading anything else would not provide any particular advantage to the model trainer—they would only do this to actively detract from the usefulness of the system, at their own personal expense (training ML models costs electricity).
+
+If you have any questions about the intended operation of this protocol, please contact the devs.
+
+--Reid Chave
