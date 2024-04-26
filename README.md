@@ -2,7 +2,7 @@
 
 SmartModel (name subject to change) is a Decentralized Application (dApp) designed to reward "trainers" with computational resources for fulfilling the requests of clients without an intermediary facilitator. 
 
-In this README, the term "superhash" will refer to the SHA256 digest of the hash receipt returned by Interplanetary Filesystem ([IPFS](https://www.ipfs.com/)) upon uploading some data. Additionally, all users will be required to provide some stake of ModelCoin, a bespoke cryptocurrency designed to incentivize the ecosystem to behave properly. If deadlines or other key protocols are broken, these stakes will be slashed (claimed by the contract).
+In this README, the term "superhash" will refer to the SHA256 digest of the hash receipt returned by Interplanetary Filesystem ([IPFS](https://www.ipfs.tech/)) upon uploading some data. Additionally, all users will be required to provide some stake of ModelCoin, a bespoke cryptocurrency designed to incentivize the ecosystem to behave properly. If deadlines or other key protocols are broken, these stakes will be slashed (claimed by the contract).
 
 In broad strokes, SmartModel functions like this:
 
@@ -19,5 +19,3 @@ In broad strokes, SmartModel functions like this:
 While there are no techical checks to ensure that the superhash originally uploaded to the chain refers to the correct model, there is an economic incentive for trainers to upload the model which actually generated their prediction, since uploading the wrong data would detract from the reputation of the system, thereby causing the price of ModelCoin to drop. By providing a stake of ModelCoin, trainers are guaranteed to have some interest in maintaining the value of ModelCoin. Furthermore, since it is infeasible to generate an accurate prediction on the testing data without producing an appropriate ML model, uploading anything else would not provide any particular advantage to the model trainer—they would only do this to actively detract from the usefulness of the system, at their own personal expense (training ML models costs electricity).
 
 If you have any questions about the intended operation of this protocol, please contact the devs.
-
---Reid Chave
