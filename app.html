@@ -15,25 +15,24 @@
     <button id="connectWallet">Connect to MetaMask</button>
     <div>
         <input type="text" id="modelIdInput" placeholder="Model ID">
-        <input type="file" id="fileInput">
+        <input type="file" id="dataInput" placeholder="Data File">
+        <input type="file" id="labelsInput" placeholder="Labels File">
         <input type="number" id="rewardInput" placeholder="Reward" step="0.01">
         <input type="text" id="contextInput" placeholder="Context (string)">
+        <input type="number" id="minutesInput" placeholder="Expiration Time (minutes)" min="1">
         <button id="submitButton">Submit Model Request</button>
     </div>
-
     <h3>Models Requested:</h3>
-
     <ul id="modelList"></ul>
-
     <div>
         <input type="text" id="verifyModelIdInput" placeholder="Model ID for Verification">
-        <input type="file" id="modelWeightsInput" placeholder="Model Weights">
+        <input type="text" id="modelUploadIdInput" placeholder="Model Upload ID">
+        <input type="file" id="guessesInput" placeholder="Guesses">
+        <input type="file" id="modelInput" placeholder="Model">
         <button id="verifyButton">Submit Model</button>
     </div>
-
-    <h3>Models Needing Verification:</h3>
+    <h3>Models Uploads:</h3>
     <ul id="modelsToVerifyList"></ul>
-
     <script src="app.js"></script>
 </body>
 </html>
