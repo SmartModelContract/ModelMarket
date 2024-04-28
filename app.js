@@ -47,7 +47,7 @@ document.getElementById("connectWallet").addEventListener("click", async () => {
       console.log(`Uploading ${dataFile.name} and ${labelsFile.name}...`);
   
       const parsedData = await parseAndShuffleData(dataFile, labelsFile);
-      if (!parsedData) return;  // Stop if parsing failed due to mismatched lengths
+      if (!parsedData) return;  
   
       try {
           const formDataTrain = new FormData();
@@ -69,7 +69,7 @@ document.getElementById("connectWallet").addEventListener("click", async () => {
           const hashTestLabelsUrl = CryptoJS.SHA256(testLabelsResult.url).toString();
   
           modelHashes.set(modelIdInput, hashTestLabelsUrl);
-          modelHashesLengths.set(modelIdInput, parsedData.testingLabels.length); // Assuming parsedData has a length attribute
+          modelHashesLengths.set(modelIdInput, parsedData.testingLabels.length); 
           prompt("*****IMPORTANT*****\nTesting data (LABELS) URL (Ctrl+C the text box):", testLabelsResult.url);
   
           displayModelData({
@@ -90,7 +90,7 @@ document.getElementById("connectWallet").addEventListener("click", async () => {
   function displayModelData(data) {
       const modelList = document.getElementById("modelList");
       const entry = document.createElement("li");
-      entry.setAttribute('data-id', data.id);  // Useful for later reference
+      entry.setAttribute('data-id', data.id);  
   
       const expirationString = data.expiration ? data.expiration.toLocaleString() : 'Not set';
   
@@ -102,32 +102,106 @@ document.getElementById("connectWallet").addEventListener("click", async () => {
   
       modelList.appendChild(entry);
   
-      // Also display the model ID in the verification list to set up for uploads
       const modelsToVerifyList = document.getElementById("modelsToVerifyList");
       const verifyEntry = document.createElement("li");
       verifyEntry.setAttribute('data-id', data.id);
       verifyEntry.innerHTML = `Model ID: ${data.id}`;
-      verifyEntry.appendChild(document.createElement("ul")); // Prepare a nested list for uploads
+      verifyEntry.appendChild(document.createElement("ul")); 
       modelsToVerifyList.appendChild(verifyEntry);
   }
   
+  function finalizeModelDeletion(modelId, modelList, entry, highestPredictions, highestUploadId) {
+    if (highestUploadId) {
+        alert(`For model ID ${modelId}, Upload ID ${highestUploadId} claims to have the most correct predictions.`);
+        displayZKSnarkRequirement(modelId, highestUploadId, highestPredictions);
+    }
+
+    const relatedParentEntries = modelsToVerifyList.querySelectorAll(`li[data-id='${modelId}']`);
+    relatedParentEntries.forEach(parentEl => {parentEl.remove();});
+
+    modelList.removeChild(entry);
+    modelHashes.delete(modelId);
+    modelHashesLengths.delete(modelId);
+    modelTestingIDs.delete(modelId);
+}
+
+async function promptForPredictions(modelId, uploadId) {
+    return new Promise(resolve => {
+        const predictions = prompt(`For model ID: ${modelId}, the ${uploadId} number of correct predictions is:`);
+        resolve(predictions);
+    });
+}
+
+function displayZKSnarkRequirement(modelId, uploadId, predictions) {
+    const zkSnarkList = document.getElementById("modelsRequiringZKSnark");
+    const newItem = document.createElement("li");
+    newItem.innerHTML = `Model ID: ${modelId}, Upload ID: ${uploadId}, Correct Predictions: ${predictions}`;
+    zkSnarkList.appendChild(newItem);
+}
+
+  const predictionsMap = new Map();
+
   function checkForExpiredModels() {
+    console.log("Checking for expired models")
       const currentTime = new Date();
       const modelList = document.getElementById("modelList");
       const entries = modelList.querySelectorAll('li');
   
-      entries.forEach(entry => {
+      entries.forEach(async entry => {
           const expirationSpan = entry.querySelector('.expiration-time');
           if (expirationSpan) {
               const expiration = new Date(expirationSpan.textContent);
               if (expiration < currentTime) {
-                  modelList.removeChild(entry);
-                  modelHashes.delete(entry.getAttribute('data-id'));
-                  modelHashesLengths.delete(entry.getAttribute('data-id'));
+                const modelId = entry.getAttribute('data-id');
+                const hashToVerify = modelHashes.get(modelId);
+
+                // Prompt user to input the hash of the test labels
+                const userHashInput = prompt("Input the hash of the test labels for Model ID: " + modelId);
+                const userHash = CryptoJS.SHA256(userHashInput).toString();
+
+                if (userHash === hashToVerify) {
+                    alert("Verification passed");
+                    displayVerifiedTestLabel(modelId, userHashInput);
+                } else {
+                    alert("Verification failed");
+                }
+
+                const uploadIds = modelTestingIDs.get(modelId);
+                let highestPredictions = 0;
+                let highestUploadId = null;
+                if (uploadIds && uploadIds.length > 0) {
+                    
+                    const timer = setTimeout(() => {
+                        finalizeModelDeletion(modelId, modelList, entry, highestPredictions, highestUploadId);
+                    }, 120000); // 120 seconds
+
+                    for (let uploadId of uploadIds) {
+                        const predictions = await promptForPredictions(modelId, uploadId);
+                        if (parseInt(predictions, 10) > highestPredictions) {
+                            highestPredictions = parseInt(predictions, 10);
+                            highestUploadId = uploadId;
+                        }
+                    }
+
+                    clearTimeout(timer); // Clear the timer if user responds in time for now
+                    finalizeModelDeletion(modelId, modelList, entry, highestPredictions, highestUploadId);
+                    } else {
+                    alert("No models uploaded for Model ID: " + modelId);
+                    finalizeModelDeletion(modelId, modelList, entry, highestPredictions, highestUploadId);
+                    }
               }
           }
       });
   }
+
+
+  
+  function displayVerifiedTestLabel(modelId, testLabelUrl) {
+    const modelTestLabelsList = document.getElementById("modelTestLabelsList");
+    const item = document.createElement("li");
+    item.innerHTML = `Model ID: ${modelId}, <a href="${testLabelUrl}" target="_blank">Test Labels</a>`;
+    modelTestLabelsList.appendChild(item);
+}
   
   async function parseAndShuffleData(dataFile, labelsFile) {
       const dataText = await dataFile.text();
@@ -160,7 +234,7 @@ document.getElementById("connectWallet").addEventListener("click", async () => {
           trainingCsv: trainingCsv,
           testingCsv: testingCsv,
           testingLabelsCsv: testingLabelsCsv,
-          testingLabels: testingLabels  // Return this for length checking in verification
+          testingLabels: testingLabels 
       };
   }
   
@@ -171,6 +245,8 @@ document.getElementById("connectWallet").addEventListener("click", async () => {
       }
   }
   
+  const modelTestingIDs = new Map();
+
   document.getElementById("verifyButton").addEventListener("click", async function () {
       if (!window.signer) {
         alert("Please connect to MetaMask first.");
@@ -191,7 +267,7 @@ document.getElementById("connectWallet").addEventListener("click", async () => {
       const guessesData = Papa.parse(guessesText, {header: false}).data;
   
       if (modelHashesLengths.get(modelIdToVerify) !== guessesData.length) {
-          alert("The number of records in the guesses file does not match the testing data.");
+          alert("The number of records in the guesses file does not match the testing data or the model request has expired");
           return;
       }
   
@@ -220,7 +296,6 @@ document.getElementById("connectWallet").addEventListener("click", async () => {
             prompt("*****IMPORTANT*****\nTesting guesses URL (Ctrl+C the text box):", guessesResult.url);
             prompt("*****IMPORTANT*****\nModel URL (Ctrl+C the text box):", modelResult.url);
   
-              // Find the list for this model ID and add the new upload
               const modelsToVerifyList = document.getElementById("modelsToVerifyList");
               let modelSection = modelsToVerifyList.querySelector(`li[data-id='${modelIdToVerify}'] ul`);
               if (!modelSection) {
@@ -231,7 +306,11 @@ document.getElementById("connectWallet").addEventListener("click", async () => {
               const newItem = document.createElement("li");
               newItem.innerHTML = `Upload ID: ${modelUploadId}, Model: ${hashModelUrl}, Guesses: ${hashGuessesUrl}`;
               modelSection.appendChild(newItem);
-  
+              
+                if (!modelTestingIDs.has(modelIdToVerify)) {
+                modelTestingIDs.set(modelIdToVerify, []);
+                }
+                modelTestingIDs.get(modelIdToVerify).push(modelUploadId);
           } catch (error) {
               console.error("Error uploading weights file:", error);
               alert(`Error: ${error.message}`);
@@ -249,6 +328,39 @@ document.getElementById("connectWallet").addEventListener("click", async () => {
   }
   
   document.addEventListener('DOMContentLoaded', () => {
-      setInterval(checkForExpiredModels, 30000); // Check every minute
+      setInterval(checkForExpiredModels, 30000); 
   });
+
+  document.getElementById("submitZkSnarkButton").addEventListener("click", async function() {
+    const modelId = document.getElementById("zkSnarkModelIdInput").value;
+    const modelUploadId = document.getElementById("zkSnarkModelUploadIdInput").value;
+    const predictionLabelIpfs = document.getElementById("zkSnarkPredictionLabelIpfsInput").value;
+    const zkSnarkFile = document.getElementById("zkSnarkFileInput").files[0];
+
+    if (!modelId || !modelUploadId || !predictionLabelIpfs || !zkSnarkFile) {
+        alert("Please fill out all fields.");
+        return;
+    }
+    /*
+    const formData = new FormData();
+    formData.append("file", zkSnarkFile);
+
+    try {
+        const response = await fetch("http://localhost:3000/upload_train_test_weights", {
+            method: "POST",
+            body: formData
+        });
+        const result = await response.json();
+        const zkSnarkUrl = result.url;
+        alert(`zk-SNARK uploaded successfully. URL: ${zkSnarkUrl}`);
+
+        const zkSnarkList = document.getElementById("modelsRequiringZKSnark");
+        const item = document.createElement("li");
+        item.innerHTML = `Model ID: ${modelId}, Upload ID: ${modelUploadId}, Correct Predictions: Highest, zk-SNARK File: <a href="${zkSnarkUrl}" target="_blank">Download</a>`;
+        zkSnarkList.appendChild(item);
+    } catch (error) {
+        console.error("Error uploading zk-SNARK file:", error);
+        alert(`Error: ${error.message}`);
+    }*/
+});
   

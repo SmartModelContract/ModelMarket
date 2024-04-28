@@ -33,6 +33,18 @@
     </div>
     <h3>Models Uploads:</h3>
     <ul id="modelsToVerifyList"></ul>
+    <h3>Model Test Labels:</h3>
+    <ul id="modelTestLabelsList"></ul>
+    <h3>Models requiring ZKSNARK:</h3>
+    <ul id="modelsRequiringZKSnark"></ul>
+    <div>
+        <input type="text" id="zkSnarkModelIdInput" placeholder="Model ID">
+        <input type="text" id="zkSnarkModelUploadIdInput" placeholder="Model Upload ID">
+        <input type="text" id="zkSnarkPredictionLabelIpfsInput" placeholder="IPFS Link to Prediction Labels">
+        <input type="file" id="zkSnarkFileInput" placeholder="ZKSNARK">
+        <button id="submitZkSnarkButton">Submit zkSNARK</button>
+    </div>
+
     <script src="app.js"></script>
 </body>
 </html>
