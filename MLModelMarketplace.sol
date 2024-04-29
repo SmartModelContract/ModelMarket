@@ -2,13 +2,14 @@
 pragma solidity ^0.8.0;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "./ModelCoin.sol"; // Ensure this path matches your project structure
+import "./ModelCoin.sol"; // Import the ModelCoin contract
 
 contract MLModelMarketplace {
+    // Use SafeERC20 to prevent reentrancy attacks
     using SafeERC20 for ModelCoin;
 
     ModelCoin public modelCoin;
-
+    // ----------------- Model Request -----------------
     struct ModelRequest {
         address requester;
         uint256 reward;
@@ -16,32 +17,31 @@ contract MLModelMarketplace {
         string context;
         string trainingDataHash;
         string testingDataHash;
-        string modelMetadata;  // Optional metadata about the model
         bool isFulfilled;
     }
-
+    // ----------------- Model Submission -----------------
     struct ModelSubmission {
-        string[] modelHashes;  // Array to hold multiple model parts or models
+        string[] modelHashes;
         address contributor;
         bool isSubmitted;
     }
-
-    mapping(uint256 => ModelRequest) public requests;
-    mapping(uint256 => ModelSubmission) public submissions;
-    mapping(address => bool) public hasRequested;  // Track if a requestor has already made a request
+    // ----------------- Establish Variables -----------------
+    mapping(uint256 => ModelRequest) public requests; // Keep track of requests (w/ id, reward, collateral, hashes, etc.)
+    mapping(uint256 => ModelSubmission) public submissions; // keep track of submissions (hashes)
+    mapping(address => bool) public hasRequested; // Make sure requestor can only request once
 
     uint256 public requestCount;
 
-    event RequestCreated(uint256 requestId, address requester, uint256 reward, uint256 collateral, string trainingDataHash, string testingDataHash);
-    event ModelSubmitted(uint256 requestId, string[] modelHashes, address contributor);
-    event RequestFulfilled(uint256 requestId, string[] modelHashes, address contributor);
+    event RequestCreated(uint256 requestId, address requester, uint256 reward, uint256 collateral, string trainingDataHash, string testingDataHash); // request event
+    event ModelSubmitted(uint256 requestId, string[] modelHashes, address contributor); // submission event
+    event RequestFulfilled(uint256 requestId, string[] modelHashes, address contributor); // fulfillment event
 
     constructor(ModelCoin modelCoinAddress) {
         modelCoin = modelCoinAddress;
     }
 
-    function createRequest(uint256 reward, uint256 collateral, string calldata context, string calldata trainingDataHash, string calldata testingDataHash, string calldata metadata) external {
-        modelCoin.mint(address(this), reward + collateral);
+    function createRequest(uint256 reward, uint256 collateral, string calldata context, string calldata trainingDataHash, string calldata testingDataHash) external {
+        modelCoin.mint(address(this), reward + collateral); // mints when someone makes a request with collateral and reward
         uint256 requestId = ++requestCount;
         requests[requestId] = ModelRequest({
             requester: msg.sender,
@@ -50,7 +50,6 @@ contract MLModelMarketplace {
             context: context,
             trainingDataHash: trainingDataHash,
             testingDataHash: testingDataHash,
-            modelMetadata: metadata,
             isFulfilled: false
         });
         hasRequested[msg.sender] = true;
