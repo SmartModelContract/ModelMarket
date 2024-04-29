@@ -1,26 +1,29 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
 
+import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
+import "./ModelCoin.sol"; // Ensure this path matches your project structure
+
 contract MLModelMarketplace {
+    using SafeERC20 for ModelCoin;
+
+    ModelCoin public modelCoin;
+
     struct ModelRequest {
         address requester;
         uint256 reward;
         uint256 collateral;
-        uint256 stake;
-        uint256 timeLock;  // Timestamp until which certain actions are locked
         string context;
-        string trainingDataLink;
-        string unlabeledTestingDataLink;
-        string superHashLabels; // Hash for labels related to the model
-        string labels; // Plain labels uploaded by requestor after time lock
+        string trainingDataHash;
+        string testingDataHash;
+        string modelMetadata;  // Optional metadata about the model
         bool isFulfilled;
     }
 
     struct ModelSubmission {
-        string superHashModel;  // Hash of the submitted model
+        string[] modelHashes;  // Array to hold multiple model parts or models
         address contributor;
         bool isSubmitted;
-        uint accuracy;  // Accuracy submitted by the contributor after time lock
     }
 
     mapping(uint256 => ModelRequest) public requests;
@@ -29,77 +32,55 @@ contract MLModelMarketplace {
 
     uint256 public requestCount;
 
-    event RequestCreated(
-        uint256 requestId,
-        address requester,
-        uint256 reward,
-        uint256 collateral,
-        uint256 stake,
-        uint256 timeLock,
-        string trainingDataLink,
-        string unlabeledTestingDataLink,
-        string superHashLabels
-    );
-    event ModelSubmitted(uint256 requestId, string superHashModel, address contributor);
-    event LabelsUploaded(uint256 requestId, string labels);
-    event AccuracySubmitted(uint256 requestId, uint accuracy, address contributor);
-    event RequestFulfilled(uint256 requestId, string superHashModel, address contributor);
+    event RequestCreated(uint256 requestId, address requester, uint256 reward, uint256 collateral, string trainingDataHash, string testingDataHash);
+    event ModelSubmitted(uint256 requestId, string[] modelHashes, address contributor);
+    event RequestFulfilled(uint256 requestId, string[] modelHashes, address contributor);
 
-    // Function to create a new model request
-    function createRequest(
-        uint256 reward,
-        uint256 collateral,
-        uint256 stake,
-        uint256 timeLock,
-        string calldata context,
-        string calldata trainingDataLink,
-        string calldata unlabeledTestingDataLink,
-        string calldata superHashLabels
-    ) external {
-        require(!hasRequested[msg.sender], "Requestor has already made a request");
+    constructor(ModelCoin modelCoinAddress) {
+        modelCoin = modelCoinAddress;
+    }
+
+    function createRequest(uint256 reward, uint256 collateral, string calldata context, string calldata trainingDataHash, string calldata testingDataHash, string calldata metadata) external {
+        modelCoin.mint(address(this), reward + collateral);
         uint256 requestId = ++requestCount;
         requests[requestId] = ModelRequest({
             requester: msg.sender,
             reward: reward,
             collateral: collateral,
-            stake: stake,
-            timeLock: timeLock,
             context: context,
-            trainingDataLink: trainingDataLink,
-            unlabeledTestingDataLink: unlabeledTestingDataLink,
-            superHashLabels: superHashLabels,
-            labels: "",
+            trainingDataHash: trainingDataHash,
+            testingDataHash: testingDataHash,
+            modelMetadata: metadata,
             isFulfilled: false
         });
         hasRequested[msg.sender] = true;
-        emit RequestCreated(
-            requestId, msg.sender, reward, collateral, stake, timeLock,
-            trainingDataLink, unlabeledTestingDataLink, superHashLabels
-        );
+        emit RequestCreated(requestId, msg.sender, reward, collateral, trainingDataHash, testingDataHash);
     }
 
-    // Function for requestor to upload labels after time lock
-    function uploadLabels(uint256 requestId, string calldata labels) external {
-        require(msg.sender == requests[requestId].requester, "Only requester can upload labels");
-        require(block.timestamp >= requests[requestId].timeLock, "Action locked until time lock passes");
-        requests[requestId].labels = labels;
-        emit LabelsUploaded(requestId, labels);
+    function submitModel(uint256 requestId, string[] calldata modelHashes) external {
+        require(!requests[requestId].isFulfilled, "Request already fulfilled");
+        require(!submissions[requestId].isSubmitted, "Model already submitted for this request");
+        submissions[requestId] = ModelSubmission({
+            modelHashes: modelHashes,
+            contributor: msg.sender,
+            isSubmitted: true
+        });
+        emit ModelSubmitted(requestId, modelHashes, msg.sender);
     }
 
-    // Function for contributors to submit accuracies after time lock
-    function submitAccuracy(uint256 requestId, uint accuracy) external {
-        require(submissions[requestId].contributor == msg.sender, "Only model contributor can submit accuracy");
-        require(block.timestamp >= requests[requestId].timeLock, "Action locked until time lock passes");
-        submissions[requestId].accuracy = accuracy;
-        emit AccuracySubmitted(requestId, accuracy, msg.sender);
+    function fulfillRequest(uint256 requestId) external {
+        require(msg.sender == requests[requestId].requester, "Only requester can fulfill");
+        require(submissions[requestId].isSubmitted, "No model submitted yet");
+        requests[requestId].isFulfilled = true;
+        modelCoin.transfer(submissions[requestId].contributor, requests[requestId].reward);
+        modelCoin.transfer(requests[requestId].requester, requests[requestId].collateral);
+        emit RequestFulfilled(requestId, submissions[requestId].modelHashes, submissions[requestId].contributor);
     }
 
-    // Function to fetch request details
     function getRequest(uint256 requestId) external view returns (ModelRequest memory) {
         return requests[requestId];
     }
 
-    // Function to fetch the submission for a request
     function getSubmission(uint256 requestId) external view returns (ModelSubmission memory) {
         return submissions[requestId];
     }
