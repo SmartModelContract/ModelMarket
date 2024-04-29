@@ -41,7 +41,7 @@ contract MLModelMarketplace {
     }
 
     function createRequest(uint256 reward, uint256 collateral, string calldata context, string calldata trainingDataHash, string calldata testingDataHash) external {
-        modelCoin.mint(address(this), reward + collateral); // mints when someone makes a request with collateral and reward
+        require(modelCoin.transferFrom(msg.sender, address(this), reward + collateral), "Transfer failed"); // transfer reward and collateral from requestor to contract
         uint256 requestId = ++requestCount;
         requests[requestId] = ModelRequest({
             requester: msg.sender,
