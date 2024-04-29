@@ -4,6 +4,8 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
+// contract deployed at: 0x5e17b14ADd6c386305A32928F985b29bbA34Eff5
+
 contract ModelCoin is ERC20, Ownable(msg.sender) {
     uint256 private _totalSupply = 1000000 * (10 ** uint256(decimals())); // Set total supply
     mapping(address => bool) public hasClaimed;
