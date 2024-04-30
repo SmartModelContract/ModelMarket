@@ -8,8 +8,10 @@ import "@openzeppelin/contracts/utils/Strings.sol"; // String utils
 contract MLModelMarketplace {
     // Use SafeERC20 to prevent reentrancy attacks
     using SafeERC20 for ModelCoin;
-
     ModelCoin public modelCoin;
+
+    // contract deployed at: 0x36E3F7c04038D3AE09Ca7d63326F1827172b65AC
+
     // ----------------- Model Request -----------------
     struct ModelRequest {
         address requester;
@@ -279,10 +281,13 @@ contract MLModelMarketplace {
             modelID = modelIDs[i];
             ModelSubmission memory model = submissions[modelID];
 
-            // If submission is not canceled:
-            if (model.trainer != address(0) && model.claimedAccuracy > bestAccuracy) {
+            // If submission is valid and not canceled:
+            if (model.claimedAccuracy > bestAccuracy) {
                 bestCandidate = modelID;
                 bestAccuracy = model.claimedAccuracy;
+            } else if (model.trainer != address(0))
+            {   // Cancel submissions without listed accuracy.
+                cancelSubmission(modelID);
             }
         }
 
