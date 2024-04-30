@@ -1,16 +1,5 @@
 const marketplaceContractABI = [
   {
-    inputs: [
-      {
-        internalType: "contract ModelCoin",
-        name: "modelCoinAddress",
-        type: "address",
-      },
-    ],
-    stateMutability: "nonpayable",
-    type: "constructor",
-  },
-  {
     anonymous: false,
     inputs: [
       {
@@ -21,9 +10,9 @@ const marketplaceContractABI = [
       },
       {
         indexed: false,
-        internalType: "string[]",
-        name: "modelHashes",
-        type: "string[]",
+        internalType: "string",
+        name: "modelHash",
+        type: "string",
       },
       {
         indexed: false,
@@ -89,9 +78,9 @@ const marketplaceContractABI = [
       },
       {
         indexed: false,
-        internalType: "string[]",
-        name: "modelHashes",
-        type: "string[]",
+        internalType: "string",
+        name: "modelHash",
+        type: "string",
       },
       {
         indexed: false,
@@ -148,6 +137,35 @@ const marketplaceContractABI = [
     outputs: [],
     stateMutability: "nonpayable",
     type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "uint256",
+        name: "requestId",
+        type: "uint256",
+      },
+      {
+        internalType: "string",
+        name: "modelHash",
+        type: "string",
+      },
+    ],
+    name: "submitModel",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "contract ModelCoin",
+        name: "modelCoinAddress",
+        type: "address",
+      },
+    ],
+    stateMutability: "nonpayable",
+    type: "constructor",
   },
   {
     inputs: [
@@ -218,9 +236,9 @@ const marketplaceContractABI = [
       {
         components: [
           {
-            internalType: "string[]",
-            name: "modelHashes",
-            type: "string[]",
+            internalType: "string",
+            name: "modelHash",
+            type: "string",
           },
           {
             internalType: "address",
@@ -236,25 +254,6 @@ const marketplaceContractABI = [
         internalType: "struct MLModelMarketplace.ModelSubmission",
         name: "",
         type: "tuple",
-      },
-    ],
-    stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "address",
-        name: "",
-        type: "address",
-      },
-    ],
-    name: "hasRequested",
-    outputs: [
-      {
-        internalType: "bool",
-        name: "",
-        type: "bool",
       },
     ],
     stateMutability: "view",
@@ -346,6 +345,11 @@ const marketplaceContractABI = [
     name: "submissions",
     outputs: [
       {
+        internalType: "string",
+        name: "modelHash",
+        type: "string",
+      },
+      {
         internalType: "address",
         name: "contributor",
         type: "address",
@@ -357,24 +361,6 @@ const marketplaceContractABI = [
       },
     ],
     stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "requestId",
-        type: "uint256",
-      },
-      {
-        internalType: "string[]",
-        name: "modelHashes",
-        type: "string[]",
-      },
-    ],
-    name: "submitModel",
-    outputs: [],
-    stateMutability: "nonpayable",
     type: "function",
   },
 ];
