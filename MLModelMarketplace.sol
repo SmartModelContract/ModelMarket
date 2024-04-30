@@ -30,7 +30,6 @@ contract MLModelMarketplace {
     // ----------------- Establish Variables -----------------
     mapping(uint256 => ModelRequest) public requests; // Keep track of requests (w/ id, reward, collateral, hashes, etc.)
     mapping(uint256 => ModelSubmission) public submissions; // keep track of submissions (hashes)
-    mapping(address => bool) public hasRequested; // Make sure requestor can only request once
 
     uint256 public requestCount;
 
@@ -54,7 +53,6 @@ contract MLModelMarketplace {
             testingDataHash: testingDataHash,
             isFulfilled: false
         });
-        hasRequested[msg.sender] = true;
         emit RequestCreated(requestId, msg.sender, reward, collateral, trainingDataHash, testingDataHash);
     }
 
