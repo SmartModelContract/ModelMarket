@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./ModelCoin.sol"; // Import the ModelCoin contract
 
-// contract deployed at: 0xdBB8b48Ac3eFb249fc15940919eD48f4B3779132
+// contract deployed at: 0x36E3F7c04038D3AE09Ca7d63326F1827172b65AC
 
 contract MLModelMarketplace {
     // Use SafeERC20 to prevent reentrancy attacks
@@ -23,7 +23,7 @@ contract MLModelMarketplace {
     }
     // ----------------- Model Submission -----------------
     struct ModelSubmission {
-        string[] modelHashes;
+        string modelHash;
         address contributor;
         bool isSubmitted;
     }
@@ -31,11 +31,12 @@ contract MLModelMarketplace {
     mapping(uint256 => ModelRequest) public requests; // Keep track of requests (w/ id, reward, collateral, hashes, etc.)
     mapping(uint256 => ModelSubmission) public submissions; // keep track of submissions (hashes)
 
+
     uint256 public requestCount;
 
     event RequestCreated(uint256 requestId, address requester, uint256 reward, uint256 collateral, string trainingDataHash, string testingDataHash); // request event
-    event ModelSubmitted(uint256 requestId, string[] modelHashes, address contributor); // submission event
-    event RequestFulfilled(uint256 requestId, string[] modelHashes, address contributor); // fulfillment event
+    event ModelSubmitted(uint256 requestId, string modelHash, address contributor); // submission event
+    event RequestFulfilled(uint256 requestId, string modelHash, address contributor); // fulfillment event
 
     constructor(ModelCoin modelCoinAddress) {
         modelCoin = modelCoinAddress;
@@ -56,15 +57,15 @@ contract MLModelMarketplace {
         emit RequestCreated(requestId, msg.sender, reward, collateral, trainingDataHash, testingDataHash);
     }
 
-    function submitModel(uint256 requestId, string[] calldata modelHashes) external {
+    function submitModel(uint256 requestId, string calldata modelHash) external {
         require(!requests[requestId].isFulfilled, "Request already fulfilled");
         require(!submissions[requestId].isSubmitted, "Model already submitted for this request");
         submissions[requestId] = ModelSubmission({
-            modelHashes: modelHashes,
+            modelHash: modelHash,
             contributor: msg.sender,
             isSubmitted: true
         });
-        emit ModelSubmitted(requestId, modelHashes, msg.sender);
+        emit ModelSubmitted(requestId, modelHash, msg.sender);
     }
 
     function fulfillRequest(uint256 requestId) external {
@@ -73,7 +74,7 @@ contract MLModelMarketplace {
         requests[requestId].isFulfilled = true;
         modelCoin.transfer(submissions[requestId].contributor, requests[requestId].reward);
         modelCoin.transfer(requests[requestId].requester, requests[requestId].collateral);
-        emit RequestFulfilled(requestId, submissions[requestId].modelHashes, submissions[requestId].contributor);
+        emit RequestFulfilled(requestId, submissions[requestId].modelHash, submissions[requestId].contributor);
     }
 
     function getRequest(uint256 requestId) external view returns (ModelRequest memory) {

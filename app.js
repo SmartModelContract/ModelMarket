@@ -1,4 +1,4 @@
-import { modelContractABI } from "./ModelCoin.abi";
+import { modelCoinContractABI } from "./ModelCoin.abi";
 
 document.getElementById("connectWallet").addEventListener("click", async () => {
   if (typeof window.ethereum !== "undefined") {
@@ -430,8 +430,8 @@ async function triggerAirdrop() {
   const provider = new ethers.providers.Web3Provider(window.ethereum);
   const signer = provider.getSigner();
 
-  const contractABI = modelContractABI;
-  const contractAddress = "0x5e17b14ADd6c386305A32928F985b29bbA34Eff5";
+  const contractABI = modelCoinContractABI;
+  const contractAddress = "0x7B6f1e448E5F284dE0246cA0f7bD94a483589009";
   const modelCoinContract = new ethers.Contract(
     contractAddress,
     contractABI,

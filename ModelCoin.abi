@@ -1,4 +1,4 @@
-const modelContractABI = [
+const modelCoinContractABI = [
   {
     inputs: [],
     stateMutability: "nonpayable",
