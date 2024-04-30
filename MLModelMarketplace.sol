@@ -19,6 +19,7 @@ contract MLModelMarketplace {
         string context;
         string trainingDataHash;
         string testingDataHash;
+        // testing labels sha string
         bool isFulfilled;
     }
     // ----------------- Model Submission -----------------
@@ -26,6 +27,8 @@ contract MLModelMarketplace {
         string modelHash;
         address contributor;
         bool isSubmitted;
+        // upload hash(guesses) which is a string of hash
+        // need identifier
     }
     // ----------------- Establish Variables -----------------
     mapping(uint256 => ModelRequest) public requests; // Keep track of requests (w/ id, reward, collateral, hashes, etc.)
@@ -44,7 +47,7 @@ contract MLModelMarketplace {
 
     function createRequest(uint256 reward, uint256 collateral, string calldata context, string calldata trainingDataHash, string calldata testingDataHash) external {
         require(modelCoin.transferFrom(msg.sender, address(this), reward + collateral), "Transfer failed"); // transfer reward and collateral from requestor to contract
-        uint256 requestId = ++requestCount;
+        uint256 requestId = ++requestCount; // get rid of this and make this an parameter
         requests[requestId] = ModelRequest({
             requester: msg.sender,
             reward: reward,
@@ -68,7 +71,7 @@ contract MLModelMarketplace {
         emit ModelSubmitted(requestId, modelHash, msg.sender);
     }
 
-    function fulfillRequest(uint256 requestId) external {
+    function fulfillRequest(uint256 requestId) external { // delete after fufillment to avoid too much storage
         require(msg.sender == requests[requestId].requester, "Only requester can fulfill");
         require(submissions[requestId].isSubmitted, "No model submitted yet");
         requests[requestId].isFulfilled = true;
