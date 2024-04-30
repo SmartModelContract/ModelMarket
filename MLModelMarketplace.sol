@@ -4,7 +4,7 @@ pragma solidity ^0.8.20;
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./ModelCoin.sol"; // Import the ModelCoin contract
 
-// contract deployed at: 0xe2899bddFD890e320e643044c6b95B9B0b84157A
+// contract deployed at: 0xdBB8b48Ac3eFb249fc15940919eD48f4B3779132
 
 contract MLModelMarketplace {
     // Use SafeERC20 to prevent reentrancy attacks
