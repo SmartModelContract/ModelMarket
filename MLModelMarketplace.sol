@@ -2,7 +2,7 @@
 pragma solidity ^0.8.20;
 
 // If compiling on Remix IDE, use custom ./compiler_config.json file.
-// address deployed at: 0x8C2EbC431e4311dc4e8C2D2CdfB6Fb821261b055
+
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./ModelCoin.sol"; // Import the ModelCoin contract
 
@@ -11,7 +11,7 @@ contract MLModelMarketplace {
     using SafeERC20 for ModelCoin;
     ModelCoin public modelCoin;
 
-    // contract deployed at: 0x36E3F7c04038D3AE09Ca7d63326F1827172b65AC
+    // contract deployed at: 0x8C2EbC431e4311dc4e8C2D2CdfB6Fb821261b055
 
     constructor(ModelCoin modelCoinAddress) {
         modelCoin = modelCoinAddress;
