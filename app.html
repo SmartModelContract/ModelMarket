@@ -13,6 +13,12 @@
 <body>
     <h1>Model DApp</h1>
     <button id="connectWallet">Connect to MetaMask</button>
+
+    <div>
+        <h2>Airdrop Tokens</h2>
+        <button id="airdropButton">Trigger Airdrop</button>
+    </div>
+
     <div>
         <input type="text" id="modelIdInput" placeholder="Model ID">
         <input type="file" id="dataInput" placeholder="Data File">
@@ -35,20 +41,10 @@
     <ul id="modelsToVerifyList"></ul>
     <h3>Model Test Labels:</h3>
     <ul id="modelTestLabelsList"></ul>
-    <h3>Models requiring ZKSNARK:</h3>
+    <h3>Models requiring Verification:</h3>
     <ul id="modelsRequiringZKSnark"></ul>
-    <div>
-        <input type="text" id="zkSnarkModelIdInput" placeholder="Model ID">
-        <input type="text" id="zkSnarkModelUploadIdInput" placeholder="Model Upload ID">
-        <input type="text" id="zkSnarkPredictionLabelIpfsInput" placeholder="IPFS Link to Prediction Labels">
-        <input type="file" id="zkSnarkFileInput" placeholder="ZKSNARK">
-        <button id="submitZkSnarkButton">Submit zkSNARK</button>
-    </div>
-
-    <div>
-        <h2>Airdrop Tokens</h2>
-        <button id="airdropButton">Trigger Airdrop</button>
-    </div>
+    
+    
     <script src="app.js"></script>
     <script src="ModelCoin.abi.js"></script>
     <script src="MLModelMarketplace.abi.js"></script>

@@ -3,6 +3,13 @@ document.getElementById("connectWallet").addEventListener("click", async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     window.signer = await provider.getSigner();
     console.log("Connected to MetaMask:", await signer.getAddress());
+    const contractABI = modelCoinContractABI;
+    const contractAddress = "0x7B6f1e448E5F284dE0246cA0f7bD94a483589009";
+    const modelCoinContract = new ethers.Contract(
+      contractAddress,
+      contractABI,
+      signer,
+  );
   } else {
     console.log("MetaMask is not installed!");
     alert("Please install MetaMask to use this feature.");
@@ -26,7 +33,7 @@ document
     }
 
     alert(
-      "*****IMPORTANT*****\nIt is your responsibility to keep track of the IPFS link to your testing data labels\nIf you lose these values your model may not be recoverable or you may lose your reward offered/collateral",
+      "*****IMPORTANT*****\n\nIt is your responsibility to keep track of the hash to your testing data labels\n\nIf you lose these values your model may not be recoverable or you may lose your reward offered/collateral",
     );
 
     const dataFile = document.getElementById("dataInput").files[0];
@@ -62,11 +69,13 @@ document
     console.log(`Uploading ${dataFile.name} and ${labelsFile.name}...`);
     //handleFileSelect(labelsFile, modelIdInput);
     try {
-      const labelsData = await handleFileSelect(labelsFile);
-      console.log("Labels data:", labelsData);
-      labelsArrs.set(modelIdInput, labelsData);
       const parsedData = await parseAndShuffleData(dataFile, labelsFile);
-      if (!parsedData) return;
+      if (!parsedData) {
+        alert("Issue parsing")
+        return
+      } else {
+        console.log("data parsed")
+      };
 
       try {
         const formDataTrain = new FormData();
@@ -106,28 +115,56 @@ document
 
         const trainResult = await trainResponse.json();
         const testResult = await testResponse.json();
-        const testLabelsResult = await testLabelsResponse.json();
-        const hashTestLabelsUrl = CryptoJS.SHA256(
-          testLabelsResult.url,
-        ).toString();
+        //const testLabelsResult = await testLabelsResponse.json();
+        //const hashTestLabelsUrl = CryptoJS.SHA256(
+        //  testLabelsResult.url,
+        //).toString();
 
-        modelHashes.set(modelIdInput, hashTestLabelsUrl);
-        modelHashesLengths.set(modelIdInput, parsedData.testingLabels.length);
-        prompt(
-          "*****IMPORTANT*****\nTesting data (LABELS) URL (Ctrl+C the text box):",
-          testLabelsResult.url,
-        );
+        // Example usage with a Blob from FormData
+        // Assuming 'formDataTestLabels' has been properly filled with a Blob of CSV data
+        const csvBlob = formDataTestLabels.get("file");
+        //const hashTestLabelsUrl = readAndParseCsv(csvBlob);
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            const csvString = event.target.result;
+            const numbersArray = parseCsvToNumbers(csvString);
+            console.log("Model: ", modelIdInput, ": ", numbersArray); // Outputs the array of numbers
+            const hashTestLabelsUrl = CryptoJS.SHA256(numbersArray.join('')).toString();
+            modelHashes.set(modelIdInput, numbersArray);
+            modelHashesLengths.set(modelIdInput, parsedData.testingLabels.length);
 
-        displayModelData({
-          id: modelIdInput,
-          reward: parseFloat(rewardInput).toFixed(2),
-          context: contextInput,
-          urlTrain: trainResult.url,
-          urlTest: testResult.url,
-          hashTestUrl: hashTestLabelsUrl,
-          expiration: expirationTime,
-        });
-        console.log("FUNC: ", labelsArrs.get(modelIdInput));
+            prompt(
+              "*****IMPORTANT*****\n\nTesting data (LABELS) (Ctrl+C the text box):",
+              numbersArray.join('')
+            );
+    
+            displayModelData({
+              id: modelIdInput,
+              reward: parseFloat(rewardInput).toFixed(2),
+              context: contextInput,
+              urlTrain: trainResult.url,
+              urlTest: testResult.url,
+              hashTestUrl: hashTestLabelsUrl,
+              expiration: expirationTime,
+            });
+
+    
+            try {
+              console.log("Triggering model request...");
+              const tx = await modelCoinContract.createRequest(modelIdInput, rewardInput, (rewardInput * 2), 900, contextInput, 
+              trainResult.url, testResult.url, hashTestLabelsUrl, 100);
+              await tx.wait();
+              console.log("Model Request executed successfully:", tx);
+              alert("Airdrop successful! Transaction hash: " + tx.hash);
+            } catch (error) {
+              console.error("Error triggering model request:", error);
+              alert("Model Request failed: " + error.message);
+            }
+
+        };
+        reader.readAsText(csvBlob);
+        
+        
       } catch (error) {
         console.error("Upload failed:", error);
         alert(`Upload failed: ${error.message}`);
@@ -184,11 +221,11 @@ async function finalizeModelDeletion(
       const guessesInfo = modelTestingGuessesURL.get(modelId);
       console.log(testGuessesUrl);
       console.log(guessesInfo[highestUploadId]);
-      if (guessesInfo && guessesInfo[highestUploadId] === hashTestGuessesUrl) {
+      if (guessesInfo && (CryptoJS.SHA256((guessesInfo[highestUploadId]).join('')).toString()) === hashTestGuessesUrl) {
         alert("Testing labels verified.");
         //const file = await fetchFileAsBlob(testGuessesUrl); // Fetch the file as Blob
-        //const labelsData = await handleFileSelect(file); // Process the file to get labels data
-        //compareLabelsArrays(labelsArrs.get(modelId), labelsData);
+        //handleFileSelect(file, highestUploadId); // Process the file to get labels data
+        compareLabelsArrays(guessesInfo[highestUploadId], modelHashes.get(modelId), highestPredictions, modelId, highestUploadId);
       } else {
         alert("Testing labels not verified.");
       }
@@ -213,7 +250,7 @@ async function fetchFileAsBlob(url) {
   return response.blob();
 }
 
-function compareLabelsArrays(original, newLabels) {
+function compareLabelsArrays(newLabels, original, number, modelId, highestUploadId) {
   if (original.length !== newLabels.length) {
     console.error("The arrays do not have the same length.");
     return;
@@ -225,12 +262,25 @@ function compareLabelsArrays(original, newLabels) {
     }
   });
   console.log(`Number of matching predictions: ${matchCount}`);
+  if (number == matchCount){
+    console.log("Verified number of correct predictions")
+    const model = prompt(
+      `For model Request: ${modelId}, the model ID: ${highestUploadId} IPFS file is:`,
+    );
+    const modelInfo = modeluploadResultURL.get(modelId);
+    console.log(modelInfo[highestUploadId]);
+    if (modelInfo[highestUploadId] == CryptoJS.SHA256(model)) {
+      console.log("Model Uploaded Successfully!")
+    }
+  } else {
+    console.log("Model not equal")
+  }
 }
 
 async function promptForPredictions(modelId, uploadId) {
   return new Promise((resolve) => {
     const predictions = prompt(
-      `For model ID: ${modelId}, the ${uploadId} number of correct predictions is:`,
+      `For model Request: ${modelId}, the model ID: ${uploadId} number of correct predictions is:`,
     );
     resolve(predictions);
   });
@@ -259,9 +309,10 @@ function checkForExpiredModels() {
         const modelId = entry.getAttribute("data-id");
         const hashToVerify = modelHashes.get(modelId);
 
-        // Prompt user to input the hash of the test labels
+        modelList.removeChild(entry);
+
         const userHashInput = prompt(
-          "Input the hash of the test labels for Model ID: " + modelId,
+          "Input the test labels for Model ID: " + modelId,
         );
         const userHash = CryptoJS.SHA256(userHashInput).toString();
 
@@ -269,29 +320,72 @@ function checkForExpiredModels() {
         let highestPredictions = 0;
         let highestUploadId = null;
 
-        if (userHash === hashToVerify) {
+        if (userHash == (CryptoJS.SHA256(hashToVerify.join('')))) {
           alert("Verification passed");
           const success = await displayVerifiedTestLabel(
             modelId,
             userHashInput,
-          ); // Wait for completion
+          ); 
           if (success) {
             console.log("await succes");
           } else {
             console.log("await failure");
           }
+          setTimeout(async () => {
+            if (uploadIds && uploadIds.length > 0) {
+                /*const timer = setTimeout(() => {
+                    finalizeModelDeletion(modelId, modelList, entry, highestPredictions, highestUploadId);
+                }, 120000); // 120 seconds */
+    
+                for (let uploadId of uploadIds) {
+                    const predictions = await promptForPredictions(modelId, uploadId);
+                    if (parseInt(predictions, 10) > highestPredictions) {
+                        highestPredictions = parseInt(predictions, 10);
+                        highestUploadId = uploadId;
+                    }
+                }
+                //clearTimeout(timer); 
+                //finalizeModelDeletion(modelId, modelList, entry, highestPredictions, highestUploadId);
+                alert(
+                  `For model ID ${modelId}, Upload ID ${highestUploadId} claims to have the most correct predictions.`,
+                );
+                displayZKSnarkRequirement(modelId, highestUploadId, highestPredictions);
+                const testGuessesUrl = prompt(
+                  "Provide your test guesses whose hash was revealed:",
+                );
+            
+                if (testGuessesUrl) {
+                  const hashTestGuessesUrl = CryptoJS.SHA256(testGuessesUrl).toString();
+                  const guessesInfo = modelTestingGuessesURL.get(modelId);
+                  console.log(testGuessesUrl);
+                  console.log(guessesInfo[highestUploadId]);
+                  if (guessesInfo && (CryptoJS.SHA256((guessesInfo[highestUploadId]).join('')).toString()) === hashTestGuessesUrl) {
+                    alert("Testing labels verified.");
+                    //const file = await fetchFileAsBlob(testGuessesUrl); // Fetch the file as Blob
+                    //handleFileSelect(file, highestUploadId); // Process the file to get labels data
+                    compareLabelsArrays(guessesInfo[highestUploadId], modelHashes.get(modelId), highestPredictions, modelId, highestUploadId);
+                  } else {
+                    alert("Testing labels not verified.");
+                  }
+                }
+            } else {
+                alert("No models uploaded for Model ID: " + modelId);
+                //finalizeModelDeletion(modelId, modelList, entry, highestPredictions, highestUploadId);
+            }
+          }, 0);
+
         } else {
           alert("Verification failed");
-          finalizeModelDeletion(
+          /*finalizeModelDeletion(
             modelId,
             modelList,
             entry,
             highestPredictions,
             highestUploadId,
-          );
+          );*/
           return;
         }
-
+/*
         if (uploadIds && uploadIds.length > 0) {
           const timer = setTimeout(() => {
             finalizeModelDeletion(
@@ -328,7 +422,7 @@ function checkForExpiredModels() {
             highestPredictions,
             highestUploadId,
           );
-        }
+        }*/
       }
     }
   });
@@ -356,8 +450,22 @@ async function displayVerifiedTestLabel(modelId, testLabelUrl) {
     modelTestLabelsList.appendChild(item);
 }*/
 
-function handleFileSelect(file) {
-  return new Promise((resolve, reject) => {
+function readAndParseCsv(blob) {
+  const reader = new FileReader();
+  reader.onload = function(event) {
+      const csvString = event.target.result;
+      const numbersArray = parseCsvToNumbers(csvString);
+      console.log(numbersArray); // Outputs the array of numbers
+      return numbersArray;
+  };
+  reader.readAsText(blob);
+}
+
+function parseCsvToNumbers(csvString) {
+  return csvString.split('\n').map(line => Number(line.trim()));
+}
+
+function handleFileSelect(file, modelIdInput) {
     const reader = new FileReader();
 
     reader.onload = function (event) {
@@ -366,11 +474,10 @@ function handleFileSelect(file) {
         complete: function (results) {
           const flatLabels = processLabels(results.data);
           console.log("Processed flat labels:", flatLabels);
-          resolve(flatLabels); // Resolve the promise with the processed labels
+          labelsArrs.set(modelIdInput, flatLabels);
         },
         error: function (err) {
           console.error("Error parsing CSV:", err);
-          reject(err); // Reject the promise if there's an error
         },
       });
     };
@@ -381,13 +488,13 @@ function handleFileSelect(file) {
     };
 
     reader.readAsText(file);
-  });
-}
+  }
+
 
 function processLabels(labelsArray) {
   const flatLabels = labelsArray.map((row) => row[0]);
 
-  console.log("Processed flat labels:", flatLabels);
+  //console.log("Processed flat labels:", flatLabels);
 
   return flatLabels;
 }
@@ -490,46 +597,73 @@ document
           }),
         ]);
 
-        const guessesResult = await guessesResponse.json();
-        const modelResult = await modelResponse.json();
+        const csvBlob = formDataGuesses.get("file");
+        //const hashTestLabelsUrl = readAndParseCsv(csvBlob);
+        const reader = new FileReader();
+        reader.onload = async function(event) {
+            const csvString = event.target.result;
+            const numbersArray = parseCsvToNumbers(csvString);
+            console.log("Guesses:", numbersArray); // Outputs the array of numbers
+            const hashGuessesUrl = CryptoJS.SHA256(numbersArray.join('')).toString();
+            //modelHashes.set(modelIdInput, numbersArray);
+            //modelHashesLengths.set(modelIdInput, parsedData.testingLabels.length);
 
-        const hashGuessesUrl = CryptoJS.SHA256(guessesResult.url).toString();
-        const hashModelUrl = CryptoJS.SHA256(modelResult.url).toString();
+            //const guessesResult = await guessesResponse.json();
+            const modelResult = await modelResponse.json();
 
-        modelTestingGuessesURL.set(modelIdToVerify, {
-          [modelUploadId]: hashGuessesUrl,
-        });
-        modeluploadResultURL.set(modelIdToVerify, {
-          [modelUploadId]: hashModelUrl,
-        });
-        console.log("modelTestingGuesses" + modelTestingGuessesURL);
-        prompt(
-          "*****IMPORTANT*****\nTesting guesses URL (Ctrl+C the text box):",
-          guessesResult.url,
-        );
-        prompt(
-          "*****IMPORTANT*****\nModel URL (Ctrl+C the text box):",
-          modelResult.url,
-        );
+            //const hashGuessesUrl = CryptoJS.SHA256(guessesResult.url).toString();
+            const hashModelUrl = CryptoJS.SHA256(modelResult.url).toString();
 
-        const modelsToVerifyList =
-          document.getElementById("modelsToVerifyList");
-        let modelSection = modelsToVerifyList.querySelector(
-          `li[data-id='${modelIdToVerify}'] ul`,
-        );
-        if (!modelSection) {
-          console.error("Model section not found for ID:", modelIdToVerify);
-          return;
-        }
+            modelTestingGuessesURL.set(modelIdToVerify, {
+              [modelUploadId]: numbersArray,
+            });
+            modeluploadResultURL.set(modelIdToVerify, {
+              [modelUploadId]: hashModelUrl,
+            });
+            prompt(
+              "*****IMPORTANT*****\n\nTesting guesses (Ctrl+C the text box):",
+              numbersArray.join(''),
+            );
+            prompt(
+              "*****IMPORTANT*****\n\nModel URL (Ctrl+C the text box):",
+              modelResult.url,
+            );
 
-        const newItem = document.createElement("li");
-        newItem.innerHTML = `Upload ID: ${modelUploadId}, Model: ${hashModelUrl}, Guesses: ${hashGuessesUrl}`;
-        modelSection.appendChild(newItem);
+            const modelsToVerifyList =
+              document.getElementById("modelsToVerifyList");
+            let modelSection = modelsToVerifyList.querySelector(
+              `li[data-id='${modelIdToVerify}'] ul`,
+            );
+            if (!modelSection) {
+              console.error("Model section not found for ID:", modelIdToVerify);
+              return;
+            }
 
-        if (!modelTestingIDs.has(modelIdToVerify)) {
-          modelTestingIDs.set(modelIdToVerify, []);
-        }
-        modelTestingIDs.get(modelIdToVerify).push(modelUploadId);
+            const newItem = document.createElement("li");
+            newItem.innerHTML = `Upload ID: ${modelUploadId}, Model: ${hashModelUrl}, Guesses: ${hashGuessesUrl}`;
+            modelSection.appendChild(newItem);
+
+            if (!modelTestingIDs.has(modelIdToVerify)) {
+              modelTestingIDs.set(modelIdToVerify, []);
+            }
+            modelTestingIDs.get(modelIdToVerify).push(modelUploadId);
+
+            try {
+              console.log("Triggering model upload...");
+              const tx = await modelCoinContract.submitModel(modelIdInput, modelUploadId, hashModelUrl, hashGuessesUrl);
+              await tx.wait();
+              console.log("Model Upload executed successfully:", tx);
+              alert("Model Upload successful! Transaction hash: " + tx.hash);
+            } catch (error) {
+              console.error("Error triggering model upload:", error);
+              alert("Model Upload failed: " + error.message);
+            }
+
+        };
+        reader.readAsText(csvBlob);
+
+        
+
       } catch (error) {
         console.error("Error uploading weights file:", error);
         alert(`Error: ${error.message}`);
@@ -580,37 +714,4 @@ document.getElementById("airdropButton").addEventListener("click", () => {
 document.addEventListener("DOMContentLoaded", () => {
   setInterval(checkForExpiredModels, 30000);
 });
-/*
-  document.getElementById("submitZkSnarkButton").addEventListener("click", async function() {
-    const modelId = document.getElementById("zkSnarkModelIdInput").value;
-    const modelUploadId = document.getElementById("zkSnarkModelUploadIdInput").value;
-    const predictionLabelIpfs = document.getElementById("zkSnarkPredictionLabelIpfsInput").value;
-    const zkSnarkFile = document.getElementById("zkSnarkFileInput").files[0];
 
-    if (!modelId || !modelUploadId || !predictionLabelIpfs || !zkSnarkFile) {
-        alert("Please fill out all fields.");
-        return;
-    }
-
-    const formData = new FormData();
-    formData.append("file", zkSnarkFile);
-
-    try {
-        const response = await fetch("http://localhost:3000/upload_train_test_weights", {
-            method: "POST",
-            body: formData
-        });
-        const result = await response.json();
-        const zkSnarkUrl = result.url;
-        alert(`zk-SNARK uploaded successfully. URL: ${zkSnarkUrl}`);
-
-        const zkSnarkList = document.getElementById("modelsRequiringZKSnark");
-        const item = document.createElement("li");
-        item.innerHTML = `Model ID: ${modelId}, Upload ID: ${modelUploadId}, Correct Predictions: Highest, zk-SNARK File: <a href="${zkSnarkUrl}" target="_blank">Download</a>`;
-        zkSnarkList.appendChild(item);
-    } catch (error) {
-        console.error("Error uploading zk-SNARK file:", error);
-        alert(`Error: ${error.message}`);
-    }
-});
-*/
