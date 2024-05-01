@@ -271,6 +271,10 @@ function compareLabelsArrays(newLabels, original, number, modelId, highestUpload
     console.log(modelInfo[highestUploadId]);
     if (modelInfo[highestUploadId] == CryptoJS.SHA256(model)) {
       console.log("Model Uploaded Successfully!")
+      const finalModels = document.getElementById("finalModels");
+      const item = document.createElement("li");
+      item.innerHTML = `Model ID: ${modelId}, <a href="${model}" target="_blank">Model</a>`;
+      finalModels.appendChild(item);
     }
   } else {
     console.log("Model not equal")
