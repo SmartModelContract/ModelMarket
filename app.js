@@ -3,13 +3,6 @@ document.getElementById("connectWallet").addEventListener("click", async () => {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     window.signer = await provider.getSigner();
     console.log("Connected to MetaMask:", await signer.getAddress());
-    const contractABI = modelCoinContractABI;
-    const contractAddress = "0x7B6f1e448E5F284dE0246cA0f7bD94a483589009";
-    const modelCoinContract = new ethers.Contract(
-      contractAddress,
-      contractABI,
-      signer,
-  );
   } else {
     console.log("MetaMask is not installed!");
     alert("Please install MetaMask to use this feature.");
@@ -71,11 +64,11 @@ document
     try {
       const parsedData = await parseAndShuffleData(dataFile, labelsFile);
       if (!parsedData) {
-        alert("Issue parsing")
-        return
+        alert("Issue parsing");
+        return;
       } else {
-        console.log("data parsed")
-      };
+        console.log("data parsed");
+      }
 
       try {
         const formDataTrain = new FormData();
@@ -125,46 +118,64 @@ document
         const csvBlob = formDataTestLabels.get("file");
         //const hashTestLabelsUrl = readAndParseCsv(csvBlob);
         const reader = new FileReader();
-        reader.onload = async function(event) {
-            const csvString = event.target.result;
-            const numbersArray = parseCsvToNumbers(csvString);
-            console.log("Model: ", modelIdInput, ": ", numbersArray); // Outputs the array of numbers
-            const hashTestLabelsUrl = CryptoJS.SHA256(numbersArray.join('')).toString();
-            modelHashes.set(modelIdInput, numbersArray);
-            modelHashesLengths.set(modelIdInput, parsedData.testingLabels.length);
+        reader.onload = async function (event) {
+          const csvString = event.target.result;
+          const numbersArray = parseCsvToNumbers(csvString);
+          console.log("Model: ", modelIdInput, ": ", numbersArray); // Outputs the array of numbers
+          const hashTestLabelsUrl = CryptoJS.SHA256(
+            numbersArray.join(""),
+          ).toString();
+          modelHashes.set(modelIdInput, numbersArray);
+          modelHashesLengths.set(modelIdInput, parsedData.testingLabels.length);
 
-            prompt(
-              "*****IMPORTANT*****\n\nTesting data (LABELS) (Ctrl+C the text box):",
-              numbersArray.join('')
+          prompt(
+            "*****IMPORTANT*****\n\nTesting data (LABELS) (Ctrl+C the text box):",
+            numbersArray.join(""),
+          );
+
+          displayModelData({
+            id: modelIdInput,
+            reward: parseFloat(rewardInput).toFixed(2),
+            context: contextInput,
+            urlTrain: trainResult.url,
+            urlTest: testResult.url,
+            hashTestUrl: hashTestLabelsUrl,
+            expiration: expirationTime,
+          });
+          /*
+          const provider = new ethers.providers.Web3Provider(window.ethereum);
+          const signer = provider.getSigner();
+
+          const contractABI = marketplaceContractABI;
+          const contractAddress = "0x8C2EbC431e4311dc4e8C2D2CdfB6Fb821261b055";
+          const marketplaceContract = new ethers.Contract(
+            contractAddress,
+            contractABI,
+            signer,
+          );
+
+          try {
+            console.log("Triggering model request...");
+            const tx = await marketplaceContract.createRequest(
+              modelIdInput,
+              rewardInput,
+              rewardInput * 2,
+              900,
+              contextInput,
+              trainResult.url,
+              testResult.url,
+              hashTestLabelsUrl,
+              100,
             );
-    
-            displayModelData({
-              id: modelIdInput,
-              reward: parseFloat(rewardInput).toFixed(2),
-              context: contextInput,
-              urlTrain: trainResult.url,
-              urlTest: testResult.url,
-              hashTestUrl: hashTestLabelsUrl,
-              expiration: expirationTime,
-            });
-
-    
-            try {
-              console.log("Triggering model request...");
-              const tx = await modelCoinContract.createRequest(modelIdInput, rewardInput, (rewardInput * 2), 900, contextInput, 
-              trainResult.url, testResult.url, hashTestLabelsUrl, 100);
-              await tx.wait();
-              console.log("Model Request executed successfully:", tx);
-              alert("Airdrop successful! Transaction hash: " + tx.hash);
-            } catch (error) {
-              console.error("Error triggering model request:", error);
-              alert("Model Request failed: " + error.message);
-            }
-
+            await tx.wait();
+            console.log("Model Request executed successfully:", tx);
+            alert("Model Request successful! Transaction hash: " + tx.hash);
+          } catch (error) {
+            console.error("Error triggering model request:", error);
+            alert("Model Request failed: " + error.message);
+          } */
         };
         reader.readAsText(csvBlob);
-        
-        
       } catch (error) {
         console.error("Upload failed:", error);
         alert(`Upload failed: ${error.message}`);
@@ -209,11 +220,11 @@ async function finalizeModelDeletion(
 ) {
   if (highestUploadId) {
     alert(
-      `For model ID ${modelId}, Upload ID ${highestUploadId} claims to have the most correct predictions.`,
+      `EVERYONE: For model ID ${modelId}, Upload ID ${highestUploadId} claims to have the most correct predictions.`,
     );
     displayZKSnarkRequirement(modelId, highestUploadId, highestPredictions);
     const testGuessesUrl = prompt(
-      "Provide the file URL for your test guesses whose hash was revealed:",
+      "MODEL CREATOR: Provide the labels for your test guesses whose hash was revealed to you earlier:",
     );
 
     if (testGuessesUrl) {
@@ -221,13 +232,27 @@ async function finalizeModelDeletion(
       const guessesInfo = modelTestingGuessesURL.get(modelId);
       console.log(testGuessesUrl);
       console.log(guessesInfo[highestUploadId]);
-      if (guessesInfo && (CryptoJS.SHA256((guessesInfo[highestUploadId]).join('')).toString()) === hashTestGuessesUrl) {
+      if (
+        guessesInfo &&
+        CryptoJS.SHA256(guessesInfo[highestUploadId].join("")).toString() ===
+          hashTestGuessesUrl
+      ) {
         alert("Testing labels verified.");
         //const file = await fetchFileAsBlob(testGuessesUrl); // Fetch the file as Blob
         //handleFileSelect(file, highestUploadId); // Process the file to get labels data
-        compareLabelsArrays(guessesInfo[highestUploadId], modelHashes.get(modelId), highestPredictions, modelId, highestUploadId);
+        compareLabelsArrays(
+          guessesInfo[highestUploadId],
+          modelHashes.get(modelId),
+          highestPredictions,
+          modelId,
+          highestUploadId,
+        );
       } else {
-        alert("Testing labels not verified.");
+        alert("Testing labels not verified. Stake Slashed.");
+        console.log("testing hash of labels incorrect")
+        removeModelEntriesFromList("modelsRequiringZKSnark", modelId);
+        removeModelEntriesFromList("modelTestLabelsList", modelId);
+        removeModelEntriesFromList("modelsToVerifyList", modelId);
       }
     }
   }
@@ -250,7 +275,13 @@ async function fetchFileAsBlob(url) {
   return response.blob();
 }
 
-function compareLabelsArrays(newLabels, original, number, modelId, highestUploadId) {
+function compareLabelsArrays(
+  newLabels,
+  original,
+  number,
+  modelId,
+  highestUploadId,
+) {
   if (original.length !== newLabels.length) {
     console.error("The arrays do not have the same length.");
     return;
@@ -262,23 +293,48 @@ function compareLabelsArrays(newLabels, original, number, modelId, highestUpload
     }
   });
   console.log(`Number of matching predictions: ${matchCount}`);
-  if (number == matchCount){
-    console.log("Verified number of correct predictions")
+  if (number == matchCount) {
+    console.log("Verified number of correct predictions");
     const model = prompt(
       `For model Request: ${modelId}, the model ID: ${highestUploadId} IPFS file is:`,
     );
     const modelInfo = modeluploadResultURL.get(modelId);
     console.log(modelInfo[highestUploadId]);
     if (modelInfo[highestUploadId] == CryptoJS.SHA256(model)) {
-      console.log("Model Uploaded Successfully!")
+      console.log("Model Uploaded Successfully!");
       const finalModels = document.getElementById("finalModels");
       const item = document.createElement("li");
       item.innerHTML = `Model ID: ${modelId}, <a href="${model}" target="_blank">Model</a>`;
+      removeModelEntriesFromList("modelsRequiringZKSnark", modelId);
+      removeModelEntriesFromList("modelTestLabelsList", modelId);
+      removeModelEntriesFromList("modelsToVerifyList", modelId);
       finalModels.appendChild(item);
     }
   } else {
-    console.log("Model not equal")
+    console.log("Model not equal");
+    alert("Model IPFS URL not correct");
+    removeModelEntriesFromList("modelsRequiringZKSnark", modelId);
+    removeModelEntriesFromList("modelTestLabelsList", modelId);
+    removeModelEntriesFromList("modelsToVerifyList", modelId);
   }
+}
+
+function removeModelEntriesFromList(listId, modelId) {
+  const list = document.getElementById(listId);
+  if (!list) {
+      console.error('List not found with ID:', listId);
+      return;
+  }
+
+  // Retrieve all list items
+  const listItems = list.querySelectorAll('li');
+  listItems.forEach(item => {
+      // Check if the list item contains the specific model ID
+      if (item.innerHTML.includes(`Model ID: ${modelId}`)) {
+          // Remove the list item if it matches
+          list.removeChild(item);
+      }
+  });
 }
 
 async function promptForPredictions(modelId, uploadId) {
@@ -316,7 +372,7 @@ function checkForExpiredModels() {
         modelList.removeChild(entry);
 
         const userHashInput = prompt(
-          "Input the test labels for Model ID: " + modelId,
+          "MODEL REQUESTER: Input the test labels revealed earlier to you for Model ID: " + modelId,
         );
         const userHash = CryptoJS.SHA256(userHashInput).toString();
 
@@ -324,12 +380,12 @@ function checkForExpiredModels() {
         let highestPredictions = 0;
         let highestUploadId = null;
 
-        if (userHash == (CryptoJS.SHA256(hashToVerify.join('')))) {
+        if (userHash == CryptoJS.SHA256(hashToVerify.join(""))) {
           alert("Verification passed");
           const success = await displayVerifiedTestLabel(
             modelId,
             userHashInput,
-          ); 
+          );
           if (success) {
             console.log("await succes");
           } else {
@@ -337,49 +393,71 @@ function checkForExpiredModels() {
           }
           setTimeout(async () => {
             if (uploadIds && uploadIds.length > 0) {
-                /*const timer = setTimeout(() => {
+              /*const timer = setTimeout(() => {
                     finalizeModelDeletion(modelId, modelList, entry, highestPredictions, highestUploadId);
                 }, 120000); // 120 seconds */
-    
-                for (let uploadId of uploadIds) {
-                    const predictions = await promptForPredictions(modelId, uploadId);
-                    if (parseInt(predictions, 10) > highestPredictions) {
-                        highestPredictions = parseInt(predictions, 10);
-                        highestUploadId = uploadId;
-                    }
-                }
-                //clearTimeout(timer); 
-                //finalizeModelDeletion(modelId, modelList, entry, highestPredictions, highestUploadId);
-                alert(
-                  `For model ID ${modelId}, Upload ID ${highestUploadId} claims to have the most correct predictions.`,
+
+              for (let uploadId of uploadIds) {
+                const predictions = await promptForPredictions(
+                  modelId,
+                  uploadId,
                 );
-                displayZKSnarkRequirement(modelId, highestUploadId, highestPredictions);
-                const testGuessesUrl = prompt(
-                  "Provide your test guesses whose hash was revealed:",
-                );
-            
-                if (testGuessesUrl) {
-                  const hashTestGuessesUrl = CryptoJS.SHA256(testGuessesUrl).toString();
-                  const guessesInfo = modelTestingGuessesURL.get(modelId);
-                  console.log(testGuessesUrl);
-                  console.log(guessesInfo[highestUploadId]);
-                  if (guessesInfo && (CryptoJS.SHA256((guessesInfo[highestUploadId]).join('')).toString()) === hashTestGuessesUrl) {
-                    alert("Testing labels verified.");
-                    //const file = await fetchFileAsBlob(testGuessesUrl); // Fetch the file as Blob
-                    //handleFileSelect(file, highestUploadId); // Process the file to get labels data
-                    compareLabelsArrays(guessesInfo[highestUploadId], modelHashes.get(modelId), highestPredictions, modelId, highestUploadId);
-                  } else {
-                    alert("Testing labels not verified.");
-                  }
+                if (parseInt(predictions, 10) > highestPredictions) {
+                  highestPredictions = parseInt(predictions, 10);
+                  highestUploadId = uploadId;
                 }
+              }
+              //clearTimeout(timer);
+              //finalizeModelDeletion(modelId, modelList, entry, highestPredictions, highestUploadId);
+              alert(
+                `For Model Request ID: ${modelId}, Model Upload ID: ${highestUploadId} claims to have the most correct predictions.`,
+              );
+              displayZKSnarkRequirement(
+                modelId,
+                highestUploadId,
+                highestPredictions,
+              );
+              
+              const testGuessesUrl = prompt(
+                `MODEL CREATOR: Provide the testing labels revealed to you earlier for Model Upload ID: ${highestUploadId}.`,
+              );
+
+              if (testGuessesUrl) {
+                const hashTestGuessesUrl =
+                  CryptoJS.SHA256(testGuessesUrl).toString();
+                const guessesInfo = modelTestingGuessesURL.get(modelId);
+                console.log(testGuessesUrl);
+                console.log(guessesInfo[highestUploadId]);
+                if (
+                  guessesInfo &&
+                  CryptoJS.SHA256(
+                    guessesInfo[highestUploadId].join(""),
+                  ).toString() === hashTestGuessesUrl
+                ) {
+                  alert("Testing labels verified.");
+                  //const file = await fetchFileAsBlob(testGuessesUrl); // Fetch the file as Blob
+                  //handleFileSelect(file, highestUploadId); // Process the file to get labels data
+                  compareLabelsArrays(
+                    guessesInfo[highestUploadId],
+                    modelHashes.get(modelId),
+                    highestPredictions,
+                    modelId,
+                    highestUploadId,
+                  );
+                } else {
+                  alert("Testing labels not verified. Model creators stake slashed.");
+                  removeModelEntriesFromList("modelsRequiringZKSnark", modelId);
+                  removeModelEntriesFromList("modelTestLabelsList", modelId);
+                  removeModelEntriesFromList("modelsToVerifyList", modelId);
+                }
+              }
             } else {
-                alert("No models uploaded for Model ID: " + modelId);
-                //finalizeModelDeletion(modelId, modelList, entry, highestPredictions, highestUploadId);
+              alert("No models uploaded for Model ID: " + modelId);
+              //finalizeModelDeletion(modelId, modelList, entry, highestPredictions, highestUploadId);
             }
           }, 0);
-
         } else {
-          alert("Verification failed");
+          alert("Verification failed. Model Requester stake slashed for not providing correct testing labels.");
           /*finalizeModelDeletion(
             modelId,
             modelList,
@@ -387,9 +465,12 @@ function checkForExpiredModels() {
             highestPredictions,
             highestUploadId,
           );*/
+          removeModelEntriesFromList("modelsRequiringZKSnark", modelId);
+          removeModelEntriesFromList("modelTestLabelsList", modelId);
+          removeModelEntriesFromList("modelsToVerifyList", modelId);
           return;
         }
-/*
+        /*
         if (uploadIds && uploadIds.length > 0) {
           const timer = setTimeout(() => {
             finalizeModelDeletion(
@@ -456,44 +537,43 @@ async function displayVerifiedTestLabel(modelId, testLabelUrl) {
 
 function readAndParseCsv(blob) {
   const reader = new FileReader();
-  reader.onload = function(event) {
-      const csvString = event.target.result;
-      const numbersArray = parseCsvToNumbers(csvString);
-      console.log(numbersArray); // Outputs the array of numbers
-      return numbersArray;
+  reader.onload = function (event) {
+    const csvString = event.target.result;
+    const numbersArray = parseCsvToNumbers(csvString);
+    console.log(numbersArray); // Outputs the array of numbers
+    return numbersArray;
   };
   reader.readAsText(blob);
 }
 
 function parseCsvToNumbers(csvString) {
-  return csvString.split('\n').map(line => Number(line.trim()));
+  return csvString.split("\n").map((line) => Number(line.trim()));
 }
 
 function handleFileSelect(file, modelIdInput) {
-    const reader = new FileReader();
+  const reader = new FileReader();
 
-    reader.onload = function (event) {
-      const csvData = event.target.result;
-      Papa.parse(csvData, {
-        complete: function (results) {
-          const flatLabels = processLabels(results.data);
-          console.log("Processed flat labels:", flatLabels);
-          labelsArrs.set(modelIdInput, flatLabels);
-        },
-        error: function (err) {
-          console.error("Error parsing CSV:", err);
-        },
-      });
-    };
+  reader.onload = function (event) {
+    const csvData = event.target.result;
+    Papa.parse(csvData, {
+      complete: function (results) {
+        const flatLabels = processLabels(results.data);
+        console.log("Processed flat labels:", flatLabels);
+        labelsArrs.set(modelIdInput, flatLabels);
+      },
+      error: function (err) {
+        console.error("Error parsing CSV:", err);
+      },
+    });
+  };
 
-    reader.onerror = function () {
-      alert("Unable to read " + file.name);
-      reject(new Error("Unable to read " + file.name));
-    };
+  reader.onerror = function () {
+    alert("Unable to read " + file.name);
+    reject(new Error("Unable to read " + file.name));
+  };
 
-    reader.readAsText(file);
-  }
-
+  reader.readAsText(file);
+}
 
 function processLabels(labelsArray) {
   const flatLabels = labelsArray.map((row) => row[0]);
@@ -604,70 +684,73 @@ document
         const csvBlob = formDataGuesses.get("file");
         //const hashTestLabelsUrl = readAndParseCsv(csvBlob);
         const reader = new FileReader();
-        reader.onload = async function(event) {
-            const csvString = event.target.result;
-            const numbersArray = parseCsvToNumbers(csvString);
-            console.log("Guesses:", numbersArray); // Outputs the array of numbers
-            const hashGuessesUrl = CryptoJS.SHA256(numbersArray.join('')).toString();
-            //modelHashes.set(modelIdInput, numbersArray);
-            //modelHashesLengths.set(modelIdInput, parsedData.testingLabels.length);
+        reader.onload = async function (event) {
+          const csvString = event.target.result;
+          const numbersArray = parseCsvToNumbers(csvString);
+          console.log("Guesses:", numbersArray); // Outputs the array of numbers
+          const hashGuessesUrl = CryptoJS.SHA256(
+            numbersArray.join(""),
+          ).toString();
+          //modelHashes.set(modelIdInput, numbersArray);
+          //modelHashesLengths.set(modelIdInput, parsedData.testingLabels.length);
 
-            //const guessesResult = await guessesResponse.json();
-            const modelResult = await modelResponse.json();
+          //const guessesResult = await guessesResponse.json();
+          const modelResult = await modelResponse.json();
 
-            //const hashGuessesUrl = CryptoJS.SHA256(guessesResult.url).toString();
-            const hashModelUrl = CryptoJS.SHA256(modelResult.url).toString();
+          //const hashGuessesUrl = CryptoJS.SHA256(guessesResult.url).toString();
+          const hashModelUrl = CryptoJS.SHA256(modelResult.url).toString();
 
-            modelTestingGuessesURL.set(modelIdToVerify, {
-              [modelUploadId]: numbersArray,
-            });
-            modeluploadResultURL.set(modelIdToVerify, {
-              [modelUploadId]: hashModelUrl,
-            });
-            prompt(
-              "*****IMPORTANT*****\n\nTesting guesses (Ctrl+C the text box):",
-              numbersArray.join(''),
+          modelTestingGuessesURL.set(modelIdToVerify, {
+            [modelUploadId]: numbersArray,
+          });
+          modeluploadResultURL.set(modelIdToVerify, {
+            [modelUploadId]: hashModelUrl,
+          });
+          prompt(
+            "*****IMPORTANT*****\n\nThese testing guesses must be provided later to enfore truthful behavior (Ctrl+C the text box):",
+            numbersArray.join(""),
+          );
+          prompt(
+            "*****IMPORTANT*****\n\nThis Model IPFS file must be provided later to enforce truthful behavior (Ctrl+C the text box):",
+            modelResult.url,
+          );
+
+          const modelsToVerifyList =
+            document.getElementById("modelsToVerifyList");
+          let modelSection = modelsToVerifyList.querySelector(
+            `li[data-id='${modelIdToVerify}'] ul`,
+          );
+          if (!modelSection) {
+            console.error("Model section not found for ID:", modelIdToVerify);
+            return;
+          }
+
+          const newItem = document.createElement("li");
+          newItem.innerHTML = `Upload ID: ${modelUploadId}, Model: ${hashModelUrl}, Guesses: ${hashGuessesUrl}`;
+          modelSection.appendChild(newItem);
+
+          if (!modelTestingIDs.has(modelIdToVerify)) {
+            modelTestingIDs.set(modelIdToVerify, []);
+          }
+          modelTestingIDs.get(modelIdToVerify).push(modelUploadId);
+          /*
+          try {
+            console.log("Triggering model upload...");
+            const tx = await modelCoinContract.submitModel(
+              modelIdInput,
+              modelUploadId,
+              hashModelUrl,
+              hashGuessesUrl,
             );
-            prompt(
-              "*****IMPORTANT*****\n\nModel URL (Ctrl+C the text box):",
-              modelResult.url,
-            );
-
-            const modelsToVerifyList =
-              document.getElementById("modelsToVerifyList");
-            let modelSection = modelsToVerifyList.querySelector(
-              `li[data-id='${modelIdToVerify}'] ul`,
-            );
-            if (!modelSection) {
-              console.error("Model section not found for ID:", modelIdToVerify);
-              return;
-            }
-
-            const newItem = document.createElement("li");
-            newItem.innerHTML = `Upload ID: ${modelUploadId}, Model: ${hashModelUrl}, Guesses: ${hashGuessesUrl}`;
-            modelSection.appendChild(newItem);
-
-            if (!modelTestingIDs.has(modelIdToVerify)) {
-              modelTestingIDs.set(modelIdToVerify, []);
-            }
-            modelTestingIDs.get(modelIdToVerify).push(modelUploadId);
-
-            try {
-              console.log("Triggering model upload...");
-              const tx = await modelCoinContract.submitModel(modelIdInput, modelUploadId, hashModelUrl, hashGuessesUrl);
-              await tx.wait();
-              console.log("Model Upload executed successfully:", tx);
-              alert("Model Upload successful! Transaction hash: " + tx.hash);
-            } catch (error) {
-              console.error("Error triggering model upload:", error);
-              alert("Model Upload failed: " + error.message);
-            }
-
+            await tx.wait();
+            console.log("Model Upload executed successfully:", tx);
+            alert("Model Upload successful! Transaction hash: " + tx.hash);
+          } catch (error) {
+            console.error("Error triggering model upload:", error);
+            alert("Model Upload failed: " + error.message);
+          } */
         };
         reader.readAsText(csvBlob);
-
-        
-
       } catch (error) {
         console.error("Error uploading weights file:", error);
         alert(`Error: ${error.message}`);
@@ -718,4 +801,3 @@ document.getElementById("airdropButton").addEventListener("click", () => {
 document.addEventListener("DOMContentLoaded", () => {
   setInterval(checkForExpiredModels, 30000);
 });
-
