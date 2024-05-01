@@ -142,6 +142,7 @@ document
             hashTestUrl: hashTestLabelsUrl,
             expiration: expirationTime,
           });
+
           const provider = new ethers.providers.Web3Provider(window.ethereum);
           const signer = provider.getSigner();
 
@@ -168,7 +169,7 @@ document
             );
             await tx.wait();
             console.log("Model Request executed successfully:", tx);
-            alert("Model Request success! Transaction hash: " + tx.hash);
+            alert("Model Request successful! Transaction hash: " + tx.hash);
           } catch (error) {
             console.error("Error triggering model request:", error);
             alert("Model Request failed: " + error.message);
@@ -297,6 +298,10 @@ function compareLabelsArrays(
     console.log(modelInfo[highestUploadId]);
     if (modelInfo[highestUploadId] == CryptoJS.SHA256(model)) {
       console.log("Model Uploaded Successfully!");
+      const finalModels = document.getElementById("finalModels");
+      const item = document.createElement("li");
+      item.innerHTML = `Model ID: ${modelId}, <a href="${model}" target="_blank">Model</a>`;
+      finalModels.appendChild(item);
     }
   } else {
     console.log("Model not equal");
