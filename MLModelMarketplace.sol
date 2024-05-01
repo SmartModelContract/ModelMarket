@@ -22,7 +22,6 @@ contract MLModelMarketplace {
         address requester;
         uint reward;
         uint trainerStake;
-        uint submissionWindow;   // time in sec from request to closure
         uint deadline;   // DERIVED: timestamp of submission closure
         string context;         // relevant instructions / info
         string trainingIPFS;
@@ -41,13 +40,12 @@ contract MLModelMarketplace {
         // 6 - Requester Punished for Taking Too Long
         // ---------------------
 
-        uint status;             // current status code
-        address blameworthy;        // responsible for preventing timeout
-        uint timeout;            // timestamp when contract will revert
-        uint canceledCount;      // # of canceled submissions
+        uint status;            // current status code
+        address blameworthy;    // responsible for preventing timeout
+        uint timeout;           // timestamp when contract will revert
+        uint canceledCount;     // # of canceled submissions
 
         // Ground Truth
-        bool hasGroundTruth;
         uint[] groundTruth;
 
         // Candidate Selection
@@ -79,16 +77,13 @@ contract MLModelMarketplace {
     uint public requestCount; // TODO necessary?
     uint public responseWindow = 900;  // fifteen minutes (in seconds)
 
-    event RequestCreated (string requestID, address requester, uint reward, uint trainerStake, uint deadline, string context, string trainingIPFS, string unlabeledTestingIPFS, string groundTruthSHA, uint testDataSize);
+    event RequestCreated (string requestID, address requester, uint timeout);
     event RequestUpdated(string requestID, uint timeout, uint status);
     event RequestCanceled(string requestID, uint status);
 
-    event ModelSubmitted    (string modelID, string targetRequestID, address trainer, string modelSuperhash, string predictionSHA);
+    event ModelSubmitted    (string modelID, string targetRequestID, address trainer);
     event SubmissionCanceled(string modelID, string targetRequestID);
-
     event ModelAccepted(string requestID, string modelID, string modelIPFS);
-
-
 
 
     // -------------- External View Functions ---------------
@@ -103,7 +98,7 @@ contract MLModelMarketplace {
 
     // ------------- Internal Utility Functions ---------------
 
-    function stringOfArray(uint[] memory array) internal returns (string memory) {
+    function stringOfArray(uint[] memory array) internal pure returns (string memory) {
         string memory outputString = "";
         for (uint i = 0; i < array.length; i++) {
             outputString = string.concat(outputString, Strings.toString(array[i]));
@@ -137,7 +132,7 @@ contract MLModelMarketplace {
     // =========== Core Protocol ============ TODO: update!!!
 
     function createRequest(string calldata requestID, uint reward, uint trainerStake, uint submissionWindow,
-                           uint deadline, string calldata context, string calldata trainingIPFS,
+                           string calldata context, string calldata trainingIPFS,
                            string calldata unlabeledTestingIPFS, string calldata groundTruthSHA,
                            uint testDataSize) external {
 
@@ -148,8 +143,7 @@ contract MLModelMarketplace {
             requester: msg.sender,
             reward: reward,
             trainerStake: trainerStake,
-            submissionWindow: submissionWindow,
-            deadline: deadline,
+            deadline: block.timestamp + submissionWindow,
             context: context,
             trainingIPFS: trainingIPFS,
             unlabeledTestingIPFS: unlabeledTestingIPFS,
@@ -159,14 +153,13 @@ contract MLModelMarketplace {
             // Tracking
             status: 0,
             blameworthy: msg.sender,
-            timeout: deadline + responseWindow,
+            timeout: block.timestamp + submissionWindow + responseWindow,
             canceledCount: 0,
-            hasGroundTruth: false,
             groundTruth: new uint[](testDataSize),
             candidateModel: ""
         });
 
-        emit RequestCreated(requestID, msg.sender, reward, trainerStake, deadline, context, trainingIPFS, unlabeledTestingIPFS, groundTruthSHA, testDataSize);
+        emit RequestCreated(requestID, msg.sender, requests[requestID].timeout);
     }
 
     function cancelRequest(string calldata requestID) external returns (string memory) {
@@ -218,7 +211,7 @@ contract MLModelMarketplace {
         submissionsForRequest[targetRequestID].push(modelID);
 
         // requests[requestID].submissionCount++;
-        emit ModelSubmitted(targetRequestID, modelID, msg.sender, modelSuperhash, predictionSHA);
+        emit ModelSubmitted(modelID, targetRequestID, msg.sender);
     }
 
     function cancelSubmission(string memory modelID) public {
@@ -241,8 +234,7 @@ contract MLModelMarketplace {
         ModelRequest memory request = requests[requestID];
 
         require(msg.sender == request.requester, "Only the requester can upload ground truth testing labels!");
-        require(!request.hasGroundTruth, "The ground truth has already been uploaded.");
-        require(request.status == 0, "You let the contract time out! Sorry.");
+        require(request.status == 0, "The ground truth cannot be uploaded now!");
         require(block.timestamp >= request.deadline, "It is too early to upload the ground truth! Wait until the submission deadline.");
 
         // require correct ground truth length
@@ -251,14 +243,20 @@ contract MLModelMarketplace {
         // Convert groundTruth array into string format
         string memory groundTruthString = stringOfArray(groundTruth);
 
-        // require correct ground truth
-        require(Strings.equal(request.groundTruthSHA,
-                              string(abi.encodePacked(sha256(abi.encodePacked(groundTruthString))))),
-                              "Please upload the correctly formatted ground truth corresponding"
-                              "to the hash uploaded in your initial request!");
+
+
+        // ALTERNATE GT COMPARISON USING KECCAK:
+
+        require(keccak256(abi.encodePacked(request.groundTruthSHA)) ==
+                keccak256(abi.encodePacked(sha256(abi.encodePacked(groundTruthString)))));
+
+        // Ensure correct ground truth
+        //require(Strings.equal(request.groundTruthSHA,
+        //                      string(abi.encodePacked(sha256(abi.encodePacked(groundTruthString))))),
+        //                      "Please upload the correctly formatted ground truth corresponding"
+        //                      "to the hash uploaded in your initial request!");
 
         requests[requestID].groundTruth = groundTruth;
-        requests[requestID].hasGroundTruth = true;
         requests[requestID].status = 1; // begin accepting accuracy claims
         resetTimeout(requestID);
     }
