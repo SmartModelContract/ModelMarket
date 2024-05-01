@@ -1,37 +1,31 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.0;
+pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/Ownable.sol";
 
-contract ModelCoin is ERC20, Ownable {
-    constructor() ERC20("ModelCoin", "MDC") {
-        _mint(msg.sender, 1000000 * (10 ** uint256(decimals()))); // making money out of thin air for airdrop (initial mint)
-    }
+// contract deployed at: 0x7B6f1e448E5F284dE0246cA0f7bD94a483589009
 
-    function mint(address to, uint256 amount) public onlyOwner {
-        _mint(to, amount);
-    }
-}
-
-// Airdrop
-contract ModelCoinAirdrop is Ownable {
-    ModelCoin public token;
-    mapping(address => bool) public airdropped;
+contract ModelCoin is ERC20, Ownable(msg.sender) {
+    uint256 private _totalSupply = 1000000 * (10 ** uint256(decimals())); // Set total supply
+    mapping(address => bool) public hasClaimed;
 
     event Airdropped(address recipient, uint256 amount);
 
-    constructor(ModelCoin _token) {
-        token = _token;
+    constructor() ERC20("ModelCoin", "MDC") {
+        _mint(msg.sender, _totalSupply);
     }
 
-    function airdropTokens(address[] calldata recipients, uint256 amount) public onlyOwner {
-        for (uint i = 0; i < recipients.length; i++) {
-            if (!airdropped[recipients[i]]) {
-                token.transfer(recipients[i], amount);
-                airdropped[recipients[i]] = true;
-                emit Airdropped(recipients[i], amount);
-            }
-        }
+    // Airdrop function to allow users to claim tokens
+    function claimAirdrop() public {
+        require(!hasClaimed[msg.sender], "Airdrop already claimed by this address.");
+        uint256 airdropAmount = _totalSupply / 1000;
+        require(balanceOf(owner()) >= airdropAmount, "Not enough tokens in owner's balance for airdrop.");
+
+        // Transfer the airdrop tokens from the owner to the claimant
+        _transfer(owner(), msg.sender, airdropAmount);
+        hasClaimed[msg.sender] = true; // Mark as claimed
+
+        emit Airdropped(msg.sender, airdropAmount);
     }
 }
