@@ -1,16 +1,5 @@
 const marketplaceContractABI = [
   {
-    inputs: [
-      {
-        internalType: "contract ModelCoin",
-        name: "modelCoinAddress",
-        type: "address",
-      },
-    ],
-    stateMutability: "nonpayable",
-    type: "constructor",
-  },
-  {
     anonymous: false,
     inputs: [
       {
@@ -271,6 +260,94 @@ const marketplaceContractABI = [
         type: "string",
       },
     ],
+    name: "pickCandidate",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "modelID",
+        type: "string",
+      },
+      {
+        internalType: "uint256",
+        name: "accuracy",
+        type: "uint256",
+      },
+    ],
+    name: "submitAccuracy",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "targetRequestID",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "modelID",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "modelSuperhash",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "predictionSHA",
+        type: "string",
+      },
+    ],
+    name: "submitModel",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "requestID",
+        type: "string",
+      },
+      {
+        internalType: "uint256[]",
+        name: "groundTruth",
+        type: "uint256[]",
+      },
+    ],
+    name: "uploadGroundTruth",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "contract ModelCoin",
+        name: "modelCoinAddress",
+        type: "address",
+      },
+    ],
+    stateMutability: "nonpayable",
+    type: "constructor",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "requestID",
+        type: "string",
+      },
+    ],
     name: "getRequest",
     outputs: [
       {
@@ -451,19 +528,6 @@ const marketplaceContractABI = [
     inputs: [
       {
         internalType: "string",
-        name: "requestID",
-        type: "string",
-      },
-    ],
-    name: "pickCandidate",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "string",
         name: "",
         type: "string",
       },
@@ -599,70 +663,6 @@ const marketplaceContractABI = [
       },
     ],
     stateMutability: "view",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "string",
-        name: "modelID",
-        type: "string",
-      },
-      {
-        internalType: "uint256",
-        name: "accuracy",
-        type: "uint256",
-      },
-    ],
-    name: "submitAccuracy",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "string",
-        name: "targetRequestID",
-        type: "string",
-      },
-      {
-        internalType: "string",
-        name: "modelID",
-        type: "string",
-      },
-      {
-        internalType: "string",
-        name: "modelSuperhash",
-        type: "string",
-      },
-      {
-        internalType: "string",
-        name: "predictionSHA",
-        type: "string",
-      },
-    ],
-    name: "submitModel",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "string",
-        name: "requestID",
-        type: "string",
-      },
-      {
-        internalType: "uint256[]",
-        name: "groundTruth",
-        type: "uint256[]",
-      },
-    ],
-    name: "uploadGroundTruth",
-    outputs: [],
-    stateMutability: "nonpayable",
     type: "function",
   },
 ];
