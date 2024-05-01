@@ -1,6 +1,8 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
+// If compiling on Remix IDE, use custom ./compiler_config.json file.
+
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./ModelCoin.sol"; // Import the ModelCoin contract
 import "@openzeppelin/contracts/utils/Strings.sol"; // String utils
@@ -74,7 +76,6 @@ contract MLModelMarketplace {
     mapping(string => ModelSubmission) public submissions; // All models
     mapping(string => string[]) private submissionsForRequest; // Map requestID to list of modelIDs
 
-    uint public requestCount; // TODO necessary?
     uint public responseWindow = 900;  // fifteen minutes (in seconds)
 
     event RequestCreated (string requestID, address requester, uint timeout);
@@ -91,6 +92,10 @@ contract MLModelMarketplace {
         return requests[requestID];
     }
 
+    function getStatus(string calldata requestID) external view returns (uint) {
+        return requests[requestID].status;
+    }
+
     function getSubmission(string calldata modelID) external view returns (ModelSubmission memory) {
         return submissions[modelID];
     }
@@ -98,10 +103,24 @@ contract MLModelMarketplace {
 
     // ------------- Internal Utility Functions ---------------
 
+    function stringOfDigit(uint digit) internal pure returns (string memory) {
+        require(digit < 10, "Not a digit!");
+        if (digit == 0) {return "0";}
+        if (digit == 1) {return "1";}
+        if (digit == 2) {return "2";}
+        if (digit == 3) {return "3";}
+        if (digit == 4) {return "4";}
+        if (digit == 5) {return "5";}
+        if (digit == 6) {return "6";}
+        if (digit == 7) {return "7";}
+        if (digit == 8) {return "8";}
+        if (digit == 9) {return "9";}
+    }
+
     function stringOfArray(uint[] memory array) internal pure returns (string memory) {
         string memory outputString = "";
         for (uint i = 0; i < array.length; i++) {
-            outputString = string.concat(outputString, Strings.toString(array[i]));
+            outputString = string.concat(outputString, stringOfDigit(array[i]));
         }
         return outputString;
     }
@@ -117,24 +136,29 @@ contract MLModelMarketplace {
         string[] memory modelIDs = submissionsForRequest[requestID];
 
         // Calculate reward share
-        uint numTrainers = modelIDs.length - request.canceledCount;
-        uint slice = request.reward / numTrainers;
+        uint rewardShare = request.reward / (modelIDs.length - request.canceledCount);
 
         // Distrubute slashed reward to valid trainers
         for (uint i = 0; i < modelIDs.length; i++) {
             address trainer = submissions[modelIDs[i]].trainer;
             if (trainer != address(0)) {
-                modelCoin.transfer(trainer, slice);
+                modelCoin.transfer(trainer, rewardShare);
             }
         }
     }
 
     // =========== Core Protocol ============ TODO: update!!!
 
-    function createRequest(string calldata requestID, uint reward, uint trainerStake, uint submissionWindow,
-                           string calldata context, string calldata trainingIPFS,
-                           string calldata unlabeledTestingIPFS, string calldata groundTruthSHA,
-                           uint testDataSize) external {
+    struct RequestDataParams {  // Attempt to avoid 'Stack too deep' compilation error
+        string context;
+        string trainingIPFS;
+        string unlabeledTestingIPFS;
+        string groundTruthSHA;
+        uint testDataSize;
+    }
+
+    function createRequest(string calldata requestID, uint reward, uint trainerStake,
+                           uint submissionWindow, RequestDataParams calldata data) external {
 
         require(modelCoin.transferFrom(msg.sender, address(this), reward), "Transfer failed"); // absorb reward
 
@@ -144,31 +168,29 @@ contract MLModelMarketplace {
             reward: reward,
             trainerStake: trainerStake,
             deadline: block.timestamp + submissionWindow,
-            context: context,
-            trainingIPFS: trainingIPFS,
-            unlabeledTestingIPFS: unlabeledTestingIPFS,
-            groundTruthSHA: groundTruthSHA,
-            testDataSize: testDataSize,
+            context: data.context,
+            trainingIPFS: data.trainingIPFS,
+            unlabeledTestingIPFS: data.unlabeledTestingIPFS,
+            groundTruthSHA: data.groundTruthSHA,
+            testDataSize: data.testDataSize,
 
             // Tracking
             status: 0,
             blameworthy: msg.sender,
             timeout: block.timestamp + submissionWindow + responseWindow,
             canceledCount: 0,
-            groundTruth: new uint[](testDataSize),
+            groundTruth: new uint[](data.testDataSize),
             candidateModel: ""
         });
 
         emit RequestCreated(requestID, msg.sender, requests[requestID].timeout);
     }
 
-    function cancelRequest(string calldata requestID) external returns (string memory) {
+    function cancelRequest(string calldata requestID) external {
         ModelRequest memory request = requests[requestID];
-        address requester = request.requester;
-        uint status = request.status;
 
-        require(msg.sender == requester);   // Only callable by requester
-        require(status == 0);   // and only before ground truth upload
+        require(msg.sender == request.requester);   // Only callable by requester
+        require(request.status == 0);   // and only before ground truth upload
 
         if((submissionsForRequest[requestID].length - request.canceledCount) == 0) {
             // Full Refund!
@@ -193,7 +215,6 @@ contract MLModelMarketplace {
         // Require staking of collateral
         require(modelCoin.transferFrom(msg.sender, address(this), request.trainerStake), "Collateral staking failed");
 
-        uint testDataSize = request.testDataSize;
         uint[] memory blankArray;
 
         submissions[modelID] = ModelSubmission({
@@ -238,23 +259,11 @@ contract MLModelMarketplace {
         require(block.timestamp >= request.deadline, "It is too early to upload the ground truth! Wait until the submission deadline.");
 
         // require correct ground truth length
-        require(groundTruth.length == request.testDataSize, string.concat("Ground truth labels should be an array of length ", Strings.toString(request.testDataSize)));
-
-        // Convert groundTruth array into string format
-        string memory groundTruthString = stringOfArray(groundTruth);
-
-
-
-        // ALTERNATE GT COMPARISON USING KECCAK:
-
-        require(keccak256(abi.encodePacked(request.groundTruthSHA)) ==
-                keccak256(abi.encodePacked(sha256(abi.encodePacked(groundTruthString)))));
+        require(groundTruth.length == request.testDataSize, "Ground truth labels array is the wrong size.");
 
         // Ensure correct ground truth
-        //require(Strings.equal(request.groundTruthSHA,
-        //                      string(abi.encodePacked(sha256(abi.encodePacked(groundTruthString))))),
-        //                      "Please upload the correctly formatted ground truth corresponding"
-        //                      "to the hash uploaded in your initial request!");
+        require(keccak256(abi.encodePacked(request.groundTruthSHA)) ==
+                keccak256(abi.encodePacked(sha256(abi.encodePacked(stringOfArray(groundTruth))))));
 
         requests[requestID].groundTruth = groundTruth;
         requests[requestID].status = 1; // begin accepting accuracy claims
@@ -264,7 +273,7 @@ contract MLModelMarketplace {
     function submitAccuracy(string calldata modelID, uint accuracy) external {
         ModelSubmission memory model = submissions[modelID];
         ModelRequest memory request = requests[model.targetRequestID];
-        require(accuracy <= request.testDataSize, string.concat("Accuracy is number correct out of ", Strings.toString(request.testDataSize)));
+        require(accuracy <= request.testDataSize, "Accuracy cannot be larger than 100%.");
 
         // Upload accuracy claim
         submissions[modelID].claimedAccuracy = accuracy;
@@ -272,20 +281,19 @@ contract MLModelMarketplace {
 
     function pickCandidate(string memory requestID) public {
         ModelRequest memory request = requests[requestID];
-        uint timeout = request.timeout;
-        uint status = request.status;
 
-        require(msg.sender == address(this) || ((status == 1 || status == 2) && block.timestamp >= timeout), "This function can only be called when it is time to select a candidate!");
+        require(msg.sender == address(this) ||
+               (request.status == 1 && block.timestamp >= request.timeout),
+              "This function can only be called when it is time to select a candidate!");
 
         string[] memory modelIDs = submissionsForRequest[requestID];
-        uint modelCount = modelIDs.length;
 
         // Initialize placeholders
         uint bestAccuracy = 0;
         string memory bestCandidate = "";
         string memory modelID = "";
         // Loop over submissions
-        for (uint i = 0; i < modelCount; i++) {
+        for (uint i = 0; i < modelIDs.length; i++) {
             modelID = modelIDs[i];
             ModelSubmission memory model = submissions[modelID];
 
@@ -299,7 +307,7 @@ contract MLModelMarketplace {
             }
         }
 
-        if (Strings.equal(bestCandidate, "")) {
+        if (bytes(bestCandidate).length == 0) { // No candidate to be found
             // Full Refund!
             modelCoin.transfer(request.requester, request.reward);
 
@@ -322,13 +330,9 @@ contract MLModelMarketplace {
     function enforceTimeout(string memory requestID) public {
         // can be called internally or externally
         ModelRequest memory request = requests[requestID];
-        address requester = request.requester;
-        address blameworthy = request.blameworthy;
-        uint timeout = request.timeout;
-        uint status = request.status;
 
-        require(block.timestamp > timeout, "Request has not timed out.");
-        if (requester == blameworthy) {
+        require(block.timestamp > request.timeout, "Request has not timed out.");
+        if (request.requester == request.blameworthy) {
             slashRequester(requestID);
               // 6 - Requester Punished for Taking Too Long
             requests[requestID].status = 6;
@@ -345,18 +349,18 @@ contract MLModelMarketplace {
         ModelRequest memory request = requests[model.targetRequestID];
 
         require(msg.sender == model.trainer, "You are not the trainer.");
-        require(prediction.length == request.testDataSize, string.concat("Prediction should be array of length ", Strings.toString(request.testDataSize)));
+        require(prediction.length == request.testDataSize, "Prediction array should have one element per testing datum");
 
         // Ensure model IPFS corresponds to superhash from submission
-        require(Strings.equal(model.modelSuperhash, string(abi.encodePacked(sha256(abi.encodePacked(modelIPFS))))),
-        "Please upload the correct IPFS link corresponding to the hash from your initial submission.");
-
-        // Convert prediction array into string format
-        string memory predictionString = stringOfArray(prediction);
+        require(keccak256(abi.encodePacked(model.modelSuperhash)) ==
+                keccak256(abi.encodePacked(sha256(abi.encodePacked(modelIPFS)))),
+        "Please upload the raw IPFS link corresponding to the hash from your initial submission.");
 
         // Compare prediction to previously uploaded hash
-        require(Strings.equal(model.predictionSHA, string(abi.encodePacked(sha256(abi.encodePacked(predictionString))))),
-        "Please the prediction corresponding to the SHA hash from your initial submission.");
+        require(keccak256(abi.encodePacked(model.predictionSHA)) ==
+                keccak256(abi.encodePacked(sha256(abi.encodePacked(stringOfArray(prediction))))),
+        "Please upload the raw prediction corresponding to the hash from your initial submission.");
+
         // Compare accuracy with ground truth
         uint calculatedAccuracy = 0;
         for (uint i = 0; i < request.testDataSize; i++) {
