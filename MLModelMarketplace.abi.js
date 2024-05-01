@@ -1,162 +1,5 @@
 const marketplaceContractABI = [
   {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "requestId",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "string",
-        name: "modelHash",
-        type: "string",
-      },
-      {
-        indexed: false,
-        internalType: "address",
-        name: "contributor",
-        type: "address",
-      },
-    ],
-    name: "ModelSubmitted",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "requestId",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "address",
-        name: "requester",
-        type: "address",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "reward",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "collateral",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "string",
-        name: "trainingDataHash",
-        type: "string",
-      },
-      {
-        indexed: false,
-        internalType: "string",
-        name: "testingDataHash",
-        type: "string",
-      },
-    ],
-    name: "RequestCreated",
-    type: "event",
-  },
-  {
-    anonymous: false,
-    inputs: [
-      {
-        indexed: false,
-        internalType: "uint256",
-        name: "requestId",
-        type: "uint256",
-      },
-      {
-        indexed: false,
-        internalType: "string",
-        name: "modelHash",
-        type: "string",
-      },
-      {
-        indexed: false,
-        internalType: "address",
-        name: "contributor",
-        type: "address",
-      },
-    ],
-    name: "RequestFulfilled",
-    type: "event",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "reward",
-        type: "uint256",
-      },
-      {
-        internalType: "uint256",
-        name: "collateral",
-        type: "uint256",
-      },
-      {
-        internalType: "string",
-        name: "context",
-        type: "string",
-      },
-      {
-        internalType: "string",
-        name: "trainingDataHash",
-        type: "string",
-      },
-      {
-        internalType: "string",
-        name: "testingDataHash",
-        type: "string",
-      },
-    ],
-    name: "createRequest",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "requestId",
-        type: "uint256",
-      },
-    ],
-    name: "fulfillRequest",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
-    inputs: [
-      {
-        internalType: "uint256",
-        name: "requestId",
-        type: "uint256",
-      },
-      {
-        internalType: "string",
-        name: "modelHash",
-        type: "string",
-      },
-    ],
-    name: "submitModel",
-    outputs: [],
-    stateMutability: "nonpayable",
-    type: "function",
-  },
-  {
     inputs: [
       {
         internalType: "contract ModelCoin",
@@ -168,11 +11,264 @@ const marketplaceContractABI = [
     type: "constructor",
   },
   {
+    anonymous: false,
     inputs: [
       {
+        indexed: false,
+        internalType: "string",
+        name: "modelID",
+        type: "string",
+      },
+      {
+        indexed: false,
+        internalType: "string",
+        name: "targetRequestID",
+        type: "string",
+      },
+      {
+        indexed: false,
+        internalType: "string",
+        name: "modelIPFS",
+        type: "string",
+      },
+    ],
+    name: "ModelAccepted",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "string",
+        name: "modelID",
+        type: "string",
+      },
+      {
+        indexed: false,
+        internalType: "string",
+        name: "targetRequestID",
+        type: "string",
+      },
+      {
+        indexed: false,
+        internalType: "address",
+        name: "trainer",
+        type: "address",
+      },
+    ],
+    name: "ModelSubmitted",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "string",
+        name: "requestID",
+        type: "string",
+      },
+      {
+        indexed: false,
         internalType: "uint256",
-        name: "requestId",
+        name: "status",
         type: "uint256",
+      },
+    ],
+    name: "RequestClosed",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "string",
+        name: "requestID",
+        type: "string",
+      },
+      {
+        indexed: false,
+        internalType: "address",
+        name: "requester",
+        type: "address",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "timeout",
+        type: "uint256",
+      },
+    ],
+    name: "RequestCreated",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "string",
+        name: "requestID",
+        type: "string",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "timeout",
+        type: "uint256",
+      },
+      {
+        indexed: false,
+        internalType: "uint256",
+        name: "status",
+        type: "uint256",
+      },
+    ],
+    name: "RequestUpdated",
+    type: "event",
+  },
+  {
+    anonymous: false,
+    inputs: [
+      {
+        indexed: false,
+        internalType: "string",
+        name: "modelID",
+        type: "string",
+      },
+      {
+        indexed: false,
+        internalType: "string",
+        name: "targetRequestID",
+        type: "string",
+      },
+    ],
+    name: "SubmissionCanceled",
+    type: "event",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "requestID",
+        type: "string",
+      },
+    ],
+    name: "cancelRequest",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "modelID",
+        type: "string",
+      },
+    ],
+    name: "cancelSubmission",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "modelID",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "modelIPFS",
+        type: "string",
+      },
+      {
+        internalType: "uint256[]",
+        name: "prediction",
+        type: "uint256[]",
+      },
+    ],
+    name: "candidateUpload",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "requestID",
+        type: "string",
+      },
+      {
+        internalType: "uint256",
+        name: "reward",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "trainerStake",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "submissionWindow",
+        type: "uint256",
+      },
+      {
+        internalType: "string",
+        name: "context",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "trainingIPFS",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "unlabeledTestingIPFS",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "groundTruthSHA",
+        type: "string",
+      },
+      {
+        internalType: "uint256",
+        name: "testDataSize",
+        type: "uint256",
+      },
+    ],
+    name: "createRequest",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "requestID",
+        type: "string",
+      },
+    ],
+    name: "enforceTimeout",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "requestID",
+        type: "string",
       },
     ],
     name: "getRequest",
@@ -191,7 +287,12 @@ const marketplaceContractABI = [
           },
           {
             internalType: "uint256",
-            name: "collateral",
+            name: "trainerStake",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "deadline",
             type: "uint256",
           },
           {
@@ -201,18 +302,53 @@ const marketplaceContractABI = [
           },
           {
             internalType: "string",
-            name: "trainingDataHash",
+            name: "trainingIPFS",
             type: "string",
           },
           {
             internalType: "string",
-            name: "testingDataHash",
+            name: "unlabeledTestingIPFS",
             type: "string",
           },
           {
-            internalType: "bool",
-            name: "isFulfilled",
-            type: "bool",
+            internalType: "string",
+            name: "groundTruthSHA",
+            type: "string",
+          },
+          {
+            internalType: "uint256",
+            name: "testDataSize",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "status",
+            type: "uint256",
+          },
+          {
+            internalType: "address",
+            name: "blameworthy",
+            type: "address",
+          },
+          {
+            internalType: "uint256",
+            name: "timeout",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "canceledCount",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256[]",
+            name: "groundTruth",
+            type: "uint256[]",
+          },
+          {
+            internalType: "string",
+            name: "candidateModel",
+            type: "string",
           },
         ],
         internalType: "struct MLModelMarketplace.ModelRequest",
@@ -226,9 +362,28 @@ const marketplaceContractABI = [
   {
     inputs: [
       {
+        internalType: "string",
+        name: "requestID",
+        type: "string",
+      },
+    ],
+    name: "getStatus",
+    outputs: [
+      {
         internalType: "uint256",
-        name: "requestId",
+        name: "",
         type: "uint256",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "modelID",
+        type: "string",
       },
     ],
     name: "getSubmission",
@@ -236,19 +391,39 @@ const marketplaceContractABI = [
       {
         components: [
           {
-            internalType: "string",
-            name: "modelHash",
-            type: "string",
-          },
-          {
             internalType: "address",
-            name: "contributor",
+            name: "trainer",
             type: "address",
           },
           {
-            internalType: "bool",
-            name: "isSubmitted",
-            type: "bool",
+            internalType: "string",
+            name: "targetRequestID",
+            type: "string",
+          },
+          {
+            internalType: "string",
+            name: "modelSuperhash",
+            type: "string",
+          },
+          {
+            internalType: "string",
+            name: "predictionSHA",
+            type: "string",
+          },
+          {
+            internalType: "uint256",
+            name: "claimedAccuracy",
+            type: "uint256",
+          },
+          {
+            internalType: "string",
+            name: "modelIPFS",
+            type: "string",
+          },
+          {
+            internalType: "uint256[]",
+            name: "prediction",
+            type: "uint256[]",
           },
         ],
         internalType: "struct MLModelMarketplace.ModelSubmission",
@@ -273,24 +448,24 @@ const marketplaceContractABI = [
     type: "function",
   },
   {
-    inputs: [],
-    name: "requestCount",
-    outputs: [
+    inputs: [
       {
-        internalType: "uint256",
-        name: "",
-        type: "uint256",
+        internalType: "string",
+        name: "requestID",
+        type: "string",
       },
     ],
-    stateMutability: "view",
+    name: "pickCandidate",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
   {
     inputs: [
       {
-        internalType: "uint256",
+        internalType: "string",
         name: "",
-        type: "uint256",
+        type: "string",
       },
     ],
     name: "requests",
@@ -307,7 +482,12 @@ const marketplaceContractABI = [
       },
       {
         internalType: "uint256",
-        name: "collateral",
+        name: "trainerStake",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "deadline",
         type: "uint256",
       },
       {
@@ -317,18 +497,61 @@ const marketplaceContractABI = [
       },
       {
         internalType: "string",
-        name: "trainingDataHash",
+        name: "trainingIPFS",
         type: "string",
       },
       {
         internalType: "string",
-        name: "testingDataHash",
+        name: "unlabeledTestingIPFS",
         type: "string",
       },
       {
-        internalType: "bool",
-        name: "isFulfilled",
-        type: "bool",
+        internalType: "string",
+        name: "groundTruthSHA",
+        type: "string",
+      },
+      {
+        internalType: "uint256",
+        name: "testDataSize",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "status",
+        type: "uint256",
+      },
+      {
+        internalType: "address",
+        name: "blameworthy",
+        type: "address",
+      },
+      {
+        internalType: "uint256",
+        name: "timeout",
+        type: "uint256",
+      },
+      {
+        internalType: "uint256",
+        name: "canceledCount",
+        type: "uint256",
+      },
+      {
+        internalType: "string",
+        name: "candidateModel",
+        type: "string",
+      },
+    ],
+    stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [],
+    name: "responseWindow",
+    outputs: [
+      {
+        internalType: "uint256",
+        name: "",
+        type: "uint256",
       },
     ],
     stateMutability: "view",
@@ -337,30 +560,109 @@ const marketplaceContractABI = [
   {
     inputs: [
       {
-        internalType: "uint256",
+        internalType: "string",
         name: "",
-        type: "uint256",
+        type: "string",
       },
     ],
     name: "submissions",
     outputs: [
       {
-        internalType: "string",
-        name: "modelHash",
-        type: "string",
-      },
-      {
         internalType: "address",
-        name: "contributor",
+        name: "trainer",
         type: "address",
       },
       {
-        internalType: "bool",
-        name: "isSubmitted",
-        type: "bool",
+        internalType: "string",
+        name: "targetRequestID",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "modelSuperhash",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "predictionSHA",
+        type: "string",
+      },
+      {
+        internalType: "uint256",
+        name: "claimedAccuracy",
+        type: "uint256",
+      },
+      {
+        internalType: "string",
+        name: "modelIPFS",
+        type: "string",
       },
     ],
     stateMutability: "view",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "modelID",
+        type: "string",
+      },
+      {
+        internalType: "uint256",
+        name: "accuracy",
+        type: "uint256",
+      },
+    ],
+    name: "submitAccuracy",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "targetRequestID",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "modelID",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "modelSuperhash",
+        type: "string",
+      },
+      {
+        internalType: "string",
+        name: "predictionSHA",
+        type: "string",
+      },
+    ],
+    name: "submitModel",
+    outputs: [],
+    stateMutability: "nonpayable",
+    type: "function",
+  },
+  {
+    inputs: [
+      {
+        internalType: "string",
+        name: "requestID",
+        type: "string",
+      },
+      {
+        internalType: "uint256[]",
+        name: "groundTruth",
+        type: "uint256[]",
+      },
+    ],
+    name: "uploadGroundTruth",
+    outputs: [],
+    stateMutability: "nonpayable",
     type: "function",
   },
 ];
