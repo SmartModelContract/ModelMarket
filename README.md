@@ -22,4 +22,4 @@ While there are no technical checks to ensure that the superhash originally uplo
 
 If you have any questions about the intended operation of this protocol, please contact the developers.
 
-![State Diagram: ModelMarket](https://github.com/SmartModelContract/ModelMarket/Flowchart.png?raw=true)
+![State Diagram: ModelMarket](https://github.com/SmartModelContract/ModelMarket/blob/main/Flowchart.png?raw=true)
