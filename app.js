@@ -142,12 +142,12 @@ document
             hashTestUrl: hashTestLabelsUrl,
             expiration: expirationTime,
           });
-          /*
+
           const provider = new ethers.providers.Web3Provider(window.ethereum);
           const signer = provider.getSigner();
 
           const contractABI = marketplaceContractABI;
-          const contractAddress = "0x8C2EbC431e4311dc4e8C2D2CdfB6Fb821261b055";
+          const contractAddress = "0x39ae2482B07c0538968C17E58de124DD39C0151E";
           const marketplaceContract = new ethers.Contract(
             contractAddress,
             contractABI,
@@ -157,15 +157,8 @@ document
           try {
             console.log("Triggering model request...");
             const tx = await marketplaceContract.createRequest(
-              modelIdInput,
               rewardInput,
-              rewardInput * 2,
-              900,
-              contextInput,
-              trainResult.url,
-              testResult.url,
-              hashTestLabelsUrl,
-              100,
+              modelIdInput,
             );
             await tx.wait();
             console.log("Model Request executed successfully:", tx);
@@ -173,7 +166,7 @@ document
           } catch (error) {
             console.error("Error triggering model request:", error);
             alert("Model Request failed: " + error.message);
-          } */
+          }
         };
         reader.readAsText(csvBlob);
       } catch (error) {
@@ -249,7 +242,7 @@ async function finalizeModelDeletion(
         );
       } else {
         alert("Testing labels not verified. Stake Slashed.");
-        console.log("testing hash of labels incorrect")
+        console.log("testing hash of labels incorrect");
         removeModelEntriesFromList("modelsRequiringZKSnark", modelId);
         removeModelEntriesFromList("modelTestLabelsList", modelId);
         removeModelEntriesFromList("modelsToVerifyList", modelId);
@@ -275,7 +268,7 @@ async function fetchFileAsBlob(url) {
   return response.blob();
 }
 
-function compareLabelsArrays(
+async function compareLabelsArrays(
   newLabels,
   original,
   number,
@@ -302,6 +295,28 @@ function compareLabelsArrays(
     console.log(modelInfo[highestUploadId]);
     if (modelInfo[highestUploadId] == CryptoJS.SHA256(model)) {
       console.log("Model Uploaded Successfully!");
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const signer = provider.getSigner();
+
+      const contractABI = marketplaceContractABI;
+      const contractAddress = "0x39ae2482B07c0538968C17E58de124DD39C0151E";
+      const marketplaceContract = new ethers.Contract(
+        contractAddress,
+        contractABI,
+        signer,
+      );
+
+      try {
+        console.log("Triggering model request...");
+        const tx = await marketplaceContract.finalVerification(modelIdInput);
+        await tx.wait();
+        console.log("Model Request executed successfully:", tx);
+        alert("Model Request successful! Transaction hash: " + tx.hash);
+      } catch (error) {
+        console.error("Error triggering model request:", error);
+        alert("Model Request failed: " + error.message);
+      }
+
       const finalModels = document.getElementById("finalModels");
       const item = document.createElement("li");
       item.innerHTML = `Model ID: ${modelId}, <a href="${model}" target="_blank">Model</a>`;
@@ -322,18 +337,18 @@ function compareLabelsArrays(
 function removeModelEntriesFromList(listId, modelId) {
   const list = document.getElementById(listId);
   if (!list) {
-      console.error('List not found with ID:', listId);
-      return;
+    console.error("List not found with ID:", listId);
+    return;
   }
 
   // Retrieve all list items
-  const listItems = list.querySelectorAll('li');
-  listItems.forEach(item => {
-      // Check if the list item contains the specific model ID
-      if (item.innerHTML.includes(`Model ID: ${modelId}`)) {
-          // Remove the list item if it matches
-          list.removeChild(item);
-      }
+  const listItems = list.querySelectorAll("li");
+  listItems.forEach((item) => {
+    // Check if the list item contains the specific model ID
+    if (item.innerHTML.includes(`Model ID: ${modelId}`)) {
+      // Remove the list item if it matches
+      list.removeChild(item);
+    }
   });
 }
 
@@ -372,7 +387,8 @@ function checkForExpiredModels() {
         modelList.removeChild(entry);
 
         const userHashInput = prompt(
-          "MODEL REQUESTER: Input the test labels revealed earlier to you for Model ID: " + modelId,
+          "MODEL REQUESTER: Input the test labels revealed earlier to you for Model ID: " +
+            modelId,
         );
         const userHash = CryptoJS.SHA256(userHashInput).toString();
 
@@ -417,7 +433,7 @@ function checkForExpiredModels() {
                 highestUploadId,
                 highestPredictions,
               );
-              
+
               const testGuessesUrl = prompt(
                 `MODEL CREATOR: Provide the testing labels revealed to you earlier for Model Upload ID: ${highestUploadId}.`,
               );
@@ -445,7 +461,9 @@ function checkForExpiredModels() {
                     highestUploadId,
                   );
                 } else {
-                  alert("Testing labels not verified. Model creators stake slashed.");
+                  alert(
+                    "Testing labels not verified. Model creators stake slashed.",
+                  );
                   removeModelEntriesFromList("modelsRequiringZKSnark", modelId);
                   removeModelEntriesFromList("modelTestLabelsList", modelId);
                   removeModelEntriesFromList("modelsToVerifyList", modelId);
@@ -457,7 +475,9 @@ function checkForExpiredModels() {
             }
           }, 0);
         } else {
-          alert("Verification failed. Model Requester stake slashed for not providing correct testing labels.");
+          alert(
+            "Verification failed. Model Requester stake slashed for not providing correct testing labels.",
+          );
           /*finalizeModelDeletion(
             modelId,
             modelList,
