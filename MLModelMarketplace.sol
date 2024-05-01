@@ -5,7 +5,6 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./ModelCoin.sol"; // Import the ModelCoin contract
-import "@openzeppelin/contracts/utils/Strings.sol"; // String utils
 
 contract MLModelMarketplace {
     // Use SafeERC20 to prevent reentrancy attacks
@@ -78,13 +77,13 @@ contract MLModelMarketplace {
 
     uint public responseWindow = 900;  // fifteen minutes (in seconds)
 
-    event RequestCreated (string requestID, address requester, uint timeout);
+    event RequestCreated(string requestID, address requester, uint timeout);
     event RequestUpdated(string requestID, uint timeout, uint status);
-    event RequestCanceled(string requestID, uint status);
+    event RequestClosed (string requestID, uint status);
 
     event ModelSubmitted    (string modelID, string targetRequestID, address trainer);
     event SubmissionCanceled(string modelID, string targetRequestID);
-    event ModelAccepted(string requestID, string modelID, string modelIPFS);
+    event ModelAccepted     (string modelID, string targetRequestID, string modelIPFS);
 
 
     // -------------- External View Functions ---------------
@@ -115,6 +114,7 @@ contract MLModelMarketplace {
         if (digit == 7) {return "7";}
         if (digit == 8) {return "8";}
         if (digit == 9) {return "9";}
+        return "";
     }
 
     function stringOfArray(uint[] memory array) internal pure returns (string memory) {
@@ -127,7 +127,6 @@ contract MLModelMarketplace {
 
     function resetTimeout(string memory requestID) internal {
         requests[requestID].timeout = block.timestamp + responseWindow;
-        // add event
     }
 
     // Called if request is canceled and there are submissions.
@@ -149,16 +148,9 @@ contract MLModelMarketplace {
 
     // =========== Core Protocol ============ TODO: update!!!
 
-    struct RequestDataParams {  // Attempt to avoid 'Stack too deep' compilation error
-        string context;
-        string trainingIPFS;
-        string unlabeledTestingIPFS;
-        string groundTruthSHA;
-        uint testDataSize;
-    }
-
-    function createRequest(string calldata requestID, uint reward, uint trainerStake,
-                           uint submissionWindow, RequestDataParams calldata data) external {
+    function createRequest(string calldata requestID, uint reward, uint trainerStake, uint submissionWindow,
+                string calldata context, string calldata trainingIPFS, string calldata unlabeledTestingIPFS,
+                                                string calldata groundTruthSHA, uint testDataSize) external {
 
         require(modelCoin.transferFrom(msg.sender, address(this), reward), "Transfer failed"); // absorb reward
 
@@ -168,18 +160,18 @@ contract MLModelMarketplace {
             reward: reward,
             trainerStake: trainerStake,
             deadline: block.timestamp + submissionWindow,
-            context: data.context,
-            trainingIPFS: data.trainingIPFS,
-            unlabeledTestingIPFS: data.unlabeledTestingIPFS,
-            groundTruthSHA: data.groundTruthSHA,
-            testDataSize: data.testDataSize,
+            context: context,
+            trainingIPFS: trainingIPFS,
+            unlabeledTestingIPFS: unlabeledTestingIPFS,
+            groundTruthSHA: groundTruthSHA,
+            testDataSize: testDataSize,
 
             // Tracking
             status: 0,
             blameworthy: msg.sender,
             timeout: block.timestamp + submissionWindow + responseWindow,
             canceledCount: 0,
-            groundTruth: new uint[](data.testDataSize),
+            groundTruth: new uint[](testDataSize),
             candidateModel: ""
         });
 
@@ -201,6 +193,7 @@ contract MLModelMarketplace {
         }
         // 5 - Canceled by Requester
         requests[requestID].status = 5;
+        emit RequestClosed(requestID, 5);
     }
 
     function submitModel(string calldata targetRequestID, string calldata modelID,
@@ -244,6 +237,7 @@ contract MLModelMarketplace {
 
         delete submissions[modelID];    // reset mapping to 0
         request.canceledCount++; // log cancelation
+        emit SubmissionCanceled(modelID, model.targetRequestID);
 
         // Refund trainer stake if before deadline
         if (block.timestamp < request.deadline) {
@@ -268,6 +262,7 @@ contract MLModelMarketplace {
         requests[requestID].groundTruth = groundTruth;
         requests[requestID].status = 1; // begin accepting accuracy claims
         resetTimeout(requestID);
+        emit RequestUpdated(requestID, requests[requestID].timeout, 1);
     }
 
     function submitAccuracy(string calldata modelID, uint accuracy) external {
@@ -313,6 +308,7 @@ contract MLModelMarketplace {
 
             // 4 - Refunded (No Valid Candidate Submission)
             requests[requestID].status = 4;
+            emit RequestClosed(requestID, 4);
         } else {    // New candidate found
             // Set new candidate model and cast blame on trainer
             requests[requestID].candidateModel = bestCandidate;
@@ -320,9 +316,8 @@ contract MLModelMarketplace {
 
             // 2 - Pending Candidate Validation
             requests[requestID].status = 2;
-
-            // Ensure blameworthy trainer enjoys the full response window
             resetTimeout(requestID);
+            emit RequestUpdated(requestID, requests[requestID].timeout, 2);
         }
         // add event
     }
@@ -336,6 +331,7 @@ contract MLModelMarketplace {
             slashRequester(requestID);
               // 6 - Requester Punished for Taking Too Long
             requests[requestID].status = 6;
+            emit RequestClosed(requestID, 6);
         } else {
             cancelSubmission(request.candidateModel);
             pickCandidate(requestID);
@@ -375,6 +371,8 @@ contract MLModelMarketplace {
 
             // 3 - Success (Transaction Complete)
             requests[model.targetRequestID].status = 3;
+            emit RequestClosed(model.targetRequestID, 3);
+            emit ModelAccepted(model.targetRequestID, modelID, modelIPFS);
         } else {
             // Restart the process.
             cancelSubmission(modelID);
