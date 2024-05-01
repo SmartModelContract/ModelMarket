@@ -134,14 +134,21 @@ contract MLModelMarketplace {
         ModelRequest memory request = requests[requestID];
         string[] memory modelIDs = submissionsForRequest[requestID];
 
-        // Calculate reward share
-        uint rewardShare = request.reward / (modelIDs.length - request.canceledCount);
+        uint trainersRemaining = modelIDs.length - request.canceledCount;
 
-        // Distrubute slashed reward to valid trainers
-        for (uint i = 0; i < modelIDs.length; i++) {
-            address trainer = submissions[modelIDs[i]].trainer;
-            if (trainer != address(0)) {
-                modelCoin.transfer(trainer, rewardShare);
+        if (trainersRemaining > 0) {
+            modelCoin.transfer(request.requester, request.reward);  // Full Refund!
+        } else {
+
+            // Calculate reward share
+            uint rewardShare = request.reward / trainersRemaining;
+
+            // Distrubute slashed reward to valid trainers
+            for (uint i = 0; i < modelIDs.length; i++) {
+                address trainer = submissions[modelIDs[i]].trainer;
+                if (trainer != address(0)) {
+                    modelCoin.transfer(trainer, rewardShare);
+                }
             }
         }
     }
@@ -184,13 +191,9 @@ contract MLModelMarketplace {
         require(msg.sender == request.requester);   // Only callable by requester
         require(request.status == 0);   // and only before ground truth upload
 
-        if((submissionsForRequest[requestID].length - request.canceledCount) == 0) {
-            // Full Refund!
-            modelCoin.transfer(request.requester, request.reward);
-        } else {
-            // Trainers compensated for their efforts
-            slashRequester(requestID);
-        }
+        // Trainers compensated for their efforts (or if none, full refund)
+        slashRequester(requestID);
+
         // 5 - Canceled by Requester
         requests[requestID].status = 5;
         emit RequestClosed(requestID, 5);
@@ -319,7 +322,6 @@ contract MLModelMarketplace {
             resetTimeout(requestID);
             emit RequestUpdated(requestID, requests[requestID].timeout, 2);
         }
-        // add event
     }
 
     function enforceTimeout(string memory requestID) public {
@@ -329,7 +331,7 @@ contract MLModelMarketplace {
         require(block.timestamp > request.timeout, "Request has not timed out.");
         if (request.requester == request.blameworthy) {
             slashRequester(requestID);
-              // 6 - Requester Punished for Taking Too Long
+            // 6 - Requester Punished for Taking Too Long
             requests[requestID].status = 6;
             emit RequestClosed(requestID, 6);
         } else {
