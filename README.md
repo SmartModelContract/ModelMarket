@@ -20,6 +20,35 @@ In broad strokes, SmartModel functions like this:
 
 While there are no technical checks to ensure that the superhash originally uploaded to the chain refers to the correct model, there is an economic incentive for trainers to upload the model which actually generated their prediction, since uploading the wrong data would detract from the reputation of the system, thereby causing the price of ModelCoin to drop. By providing a stake of ModelCoin, trainers are guaranteed to have some interest in maintaining the value of ModelCoin. Furthermore, since it is infeasible to generate an accurate prediction on the testing data without producing an appropriate ML model, uploading anything else would not provide any particular advantage to the model trainer—they would only do this to actively detract from the usefulness of the system, at their own personal expense (training ML models costs electricity).
 
-If you have any questions about the intended operation of this protocol, please contact the developers.
-
 ![State Diagram: ModelMarket](https://github.com/SmartModelContract/ModelMarket/blob/main/Flowchart.png?raw=true)
+
+## File Descriptions and How to Run dApp
+
+run $python3 -m http.server and $node server.js to get dApp and backend server running
+
+
+"Model Requesting Form Parameters"
+
+1) string: an ID to associate with the model
+2) file: a full csv of data for model training purposes, can use ./MNIST/mnist.csv for testing
+3) file: a full csv of data labels for model training purposes, can use ./MNIST/mnist_labels.csv for testing (must be same length as first param)
+4) number: a reward for the model creation
+5) context: any sort of information that may be necessary for model creation e.g. "classification, regression, etc." (not necessary for dApp functionality)
+6) number: an expiration time for when models must be uploaded by in minutes (minimum of 1)
+
+
+"Model Uploading/Creation Form Paramters"
+
+1) string: the model request ID specified by the model requester in the first form (a list of models requested will be populated on screen, this form value must be the ID specified by one of these requests)
+2) string: the unique ID you want to associate to this model (as opposed to the request identifier this is the ID to associate to your exact model)
+3) file: a full csv of data labels predicted by your model for the testing dataset, can use ./MNIST/mnist_labels_test.csv for testing (must be same length as the testing dataset, and although these labels are equivalent to the length of the testing data and can be submitted, the testing data is randomly split to not allow for malicious activities, so these labels are not going to be representative of the actual predictions any good ML model would make on the testing data, but is sufficient for the proof of concept)
+4) file: the model contents you created for the request (can be an arbitrary file since this is not verified as previously expressed but can use ./MNIST/mnist_model_example.h5 if you desire)
+
+
+### Notes
+
+- Make sure to keep track of all the data prompted to you by the dApp (the dApp will be specific as to which contents you must keep track of, just copy and paste the values from the prompt and keep track of them somewhere)
+- For calculating the number of correct 'predictions' you made with your model, instead of having to do the work of parsing the CSV of ground truth labels and your own testing labels just open up the console as we log the two seperate arrays here during the dApp's chain of events, copy and paste these two values into ./MNIST/array_comparison.py as the values for the variable arr1 and arr2, the result of 'correct predictions' is the value printed 
+
+
+
