@@ -1,4 +1,4 @@
-//FOR HEILA - not needed rn
+//FOR HEILA - not needed at the moment
 document.getElementById("uploadButton").addEventListener("click", async function () {
     const fileInput = document.getElementById("fileInput");
     const file = fileInput.files[0];
