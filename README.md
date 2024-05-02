@@ -48,7 +48,7 @@ If you have any questions about the intended operation of this protocol, please 
 
 ![State Diagram: ModelMarket](https://github.com/SmartModelContract/ModelMarket/blob/main/Flowchart.png?raw=true)
 
-## File Descriptions for running the dApp in MNIST folder
+## File Descriptions for example files (in MNIST directory)
 mnist.csv: dataset to upload as first form parameter for "Model Requesting"
 
 mnist_labels.csv: dataset to upload as first form parameter for "Model Requesting"
