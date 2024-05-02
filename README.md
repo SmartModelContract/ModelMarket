@@ -22,9 +22,7 @@ While there are no technical checks to ensure that the superhash originally uplo
 
 ![State Diagram: ModelMarket](https://github.com/SmartModelContract/ModelMarket/blob/main/Flowchart.png?raw=true)
 
-## File Descriptions and How to Run dApp
-
-# ModelMarket
+## ModelMarket
 
 ModelMarket is a decentralized application (dApp) designed to reward trainers for providing bespoke machine learning models on demand.
 
@@ -49,6 +47,15 @@ While there are no technical checks to ensure that the superhash originally uplo
 If you have any questions about the intended operation of this protocol, please contact the developers.
 
 ![State Diagram: ModelMarket](https://github.com/SmartModelContract/ModelMarket/blob/main/Flowchart.png?raw=true)
+
+## File Descriptions for running the dApp in MNIST folder
+mnist.csv: dataset to upload as first form parameter for "Model Requesting"
+
+mnist_labels.csv: dataset to upload as first form parameter for "Model Requesting"
+
+mnist_labels_test.csv: dataset to upload as first form paramter for "Model Uploading"
+
+mnist_model_example.h5: an example model for classifying the MNIST dataset, upload as second form paramter for "Model Uploading" (although the exact contents of the file uploaded at this parameter are uploaded)
 
 ## How to Run
 
