@@ -98,7 +98,7 @@ It is recommended to use chrome. [extension](https://chromewebstore.google.com/d
 
 You will recieve an hash of testing labels. Keep it securely in a notepad.
 
-### 3. "Model Uploading/Creation Form Paramters"
+### 3. "Model Uploading/Creation Form Parameters"
 
 1) string: the model request ID specified by the model requester in the first form (a list of models requested will be populated on screen, this form value must be the ID specified by one of these requests)
 2) string: the unique ID you want to associate to this model (as opposed to the request identifier this is the ID to associate to your exact model)
