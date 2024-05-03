@@ -97,7 +97,7 @@ You will recieve the hash of your guesses, alongside the IPFS link of your model
 
 ### Other notable files
 
-- ./circom directory: circuit.circom is the main circuit, while the rest of the files are generated upon circuit compilation, witness computation, proof generation locally, and proof generation in Solidity.
+- ./circom directory: circuit.circom is the main circuit we tried to implement for verification in our system, while the rest of the files are generated upon circuit compilation, witness computation, proof generation locally, and proof generation in Solidity (not currently used in the dApp's functionality but was an interesting attempt at including zkSNARKS as a method of validation)
 - ./ModelCoin.sol: deployed contract for our dApp's ERC-20 token
 - ./MLModelMarketplace.sol: deployed contract for dApp functionality
 
