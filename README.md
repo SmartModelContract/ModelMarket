@@ -108,10 +108,10 @@ You will recieve an hash of testing labels. Keep it securely in a notepad.
 You will recieve the hash of your guesses, alongside the IPFS link of your model.
 
 ### 4. "Submission window (purposed by requestor: the expiration time) closed"
-Requestor will now be prompted to input the hash they kept initally.
-Once verified the model creator will run array comparison to check the accuracy they got, the array is in the console, if they have best accuracy, the dApp will tell the person.
-Now model creator will be prompted to enter the hash of guesses from before.
-Contract and dApp will verify that it is correct by doing the comparsion there as well. Once verified creator will be prompted to provide the IPFS link to the model, in which the dApp will give to the requestor.
+1. Requestor will now be prompted to input the hash they kept initally.
+2. Once verified the model creator will run array comparison to check the accuracy they got, the array is in the console, if they have best accuracy, the dApp will tell the person.
+3. Now model creator will be prompted to enter the hash of guesses from before.
+4. Contract and dApp will verify that it is correct by doing the comparsion there as well. Once verified creator will be prompted to provide the IPFS link to the model, in which the dApp will give to the requestor.
 
 
 ### Notes
