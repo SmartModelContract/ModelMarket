@@ -81,6 +81,9 @@ python3 -m http.server
 ### 4. Pair with Wallet
 Make sure you are signed into your metamask wallet, click the (Connect to Metamask) button to connect to the wallet.
 
+### 5. Add an extension for cross origin policies
+It is recommended to use chrome. [extension](https://chromewebstore.google.com/detail/allow-cors-access-control/lhobafahddgcelffkeicbaginigeejlf?pli=1)
+
 ## Interacting with the dApp.
 ### 1. Airdrop 1000 MDC from the airdrop button.
 
@@ -93,13 +96,22 @@ Make sure you are signed into your metamask wallet, click the (Connect to Metama
 5) context: any sort of information that may be necessary for model creation e.g. "classification, regression, etc." (not necessary for dApp functionality)
 6) number: an expiration time for when models must be uploaded by in minutes (minimum of 1)
 
+You will recieve an hash of testing labels. Keep it securely in a notepad.
 
-### "Model Uploading/Creation Form Paramters"
+### 3. "Model Uploading/Creation Form Paramters"
 
 1) string: the model request ID specified by the model requester in the first form (a list of models requested will be populated on screen, this form value must be the ID specified by one of these requests)
 2) string: the unique ID you want to associate to this model (as opposed to the request identifier this is the ID to associate to your exact model)
 3) file: a full csv of data labels predicted by your model for the testing dataset, can use ./MNIST/mnist_labels_test.csv for testing (must be same length as the testing dataset, and although these labels are equivalent to the length of the testing data and can be submitted, the testing data is randomly split to not allow for malicious activities, so these labels are not going to be representative of the actual predictions any good ML model would make on the testing data, but is sufficient for the proof of concept)
 4) file: the model contents you created for the request (can be an arbitrary file since this is not verified as previously expressed but can use ./MNIST/mnist_model_example.h5 if you desire)
+
+You will recieve the hash of your guesses, alongside the IPFS link of your model.
+
+### 4. "Submission window (purposed by requestor: the expiration time) closed"
+Requestor will now be prompted to input the hash they kept initally.
+Once verified the model creator will run array comparison to check the accuracy they got, the array is in the console, if they have best accuracy, the dApp will tell the person.
+Now model creator will be prompted to enter the hash of guesses from before.
+Contract and dApp will verify that it is correct by doing the comparsion there as well. Once verified creator will be prompted to provide the IPFS link to the model, in which the dApp will give to the requestor.
 
 
 ### Notes
