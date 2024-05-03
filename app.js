@@ -297,7 +297,7 @@ async function compareLabelsArrays(
       console.log("Model Uploaded Successfully!");
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = provider.getSigner();
-
+  /*
       const contractABI = marketplaceContractABI;
       const contractAddress = "0x39ae2482B07c0538968C17E58de124DD39C0151E";
       const marketplaceContract = new ethers.Contract(
@@ -305,7 +305,7 @@ async function compareLabelsArrays(
         contractABI,
         signer,
       );
-
+      
       try {
         console.log("Triggering model request...");
         const tx = await marketplaceContract.finalVerification(modelIdInput);
@@ -315,7 +315,7 @@ async function compareLabelsArrays(
       } catch (error) {
         console.error("Error triggering model request:", error);
         alert("Model Request failed: " + error.message);
-      }
+      }*/
 
       const finalModels = document.getElementById("finalModels");
       const item = document.createElement("li");
