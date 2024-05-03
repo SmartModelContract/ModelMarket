@@ -95,5 +95,10 @@ You will recieve the hash of your guesses, alongside the IPFS link of your model
 - Make sure to keep track of all the data prompted to you by the dApp (the dApp will be specific as to which contents you must keep track of, just copy and paste the values from the prompt and keep track of them somewhere)
 - For calculating the number of correct 'predictions' you made with your model, instead of having to do the work of parsing the CSV of ground truth labels and your own testing labels just open up the console as we log the two seperate arrays here during the dApp's chain of events, copy and paste these two values into ./MNIST/array_comparison.py as the values for the variable arr1 and arr2, the result of 'correct predictions' is the value printed 
 
+### Other notable files
+
+- ./circom directory: circuit.circom is the main circuit, while the rest of the files are generated upon circuit compilation, witness computation, proof generation locally, and proof generation in Solidity.
+- ./ModelCoin.sol: deployed contract for our dApp's ERC-20 token
+- ./MLModelMarketplace.sol: deployed contract for dApp functionality
 
 
